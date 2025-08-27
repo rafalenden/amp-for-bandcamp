@@ -1,77 +1,91 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amp for Bandcamp</title>
-  <link rel="stylesheet" href="popup.css">
-  <script src="../../vendor/webextension-polyfill.min.js"></script>
-  <script type="module" src="popup.js" defer></script>
-</head>
-<body>
-  <h1>Amp for Bandcamp</h1>
-  
-  <fieldset class="settings">
-    <legend>Settings</legend>
-    <label class="settings-volume">
-      Volume <span id="volumeValue">100%</span>
-      <input type="range" id="volumeSlider" min="0" max="100" step="1" value="100">
-    </label>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amp for Bandcamp</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script src="../../vendor/webextension-polyfill.min.js"></script>
+    <script type="module" src="popup.js" defer></script>
+  </head>
+  <body>
+    <h1>Amp for Bandcamp</h1>
 
-    <label class="settings-leave-warning">
-      <input type="checkbox" id="showLeaveWarning" checked>
-      Warn When Leaving Site During Playback
-    </label>
-
-    <label class="settings-sticky-player">
-      <input type="checkbox" id="stickyPlayer" checked>
-      Pin Player at Top of Album Page
-    </label>
-
-    <label class="settings-auto-play-next">
-      <input type="checkbox" id="autoPlayNext" checked>
-      Play Next Track Automatically
-    </label>
-
-    <label class="settings-progress-bar">
-      <input type="checkbox" id="showProgressBar" checked>
-      Show Progress Bar on Feed Page
-    </label>
-
-    <label class="settings-keyboard-shortcuts">
-      <input type="checkbox" id="enableKeyboardShortcuts" checked>
-      Enable Keyboard Shortcuts
-    </label>
-
-    <div class="settings-seek-duration" id="seekDurationSection">
-      <label>
-        <input type="number" id="seekSeconds" min="5" max="60" step="5" value="30">
-        Skip Duration (seconds)
+    <fieldset class="settings">
+      <legend>Settings</legend>
+      <label class="settings-volume">
+        Volume <span id="volumeValue">100%</span>
+        <input
+          type="range"
+          id="volumeSlider"
+          min="0"
+          max="100"
+          step="1"
+          value="100"
+        />
       </label>
-    </div>
-  </fieldset>
 
-  <fieldset class="shortcuts" id="keyboardShortcutsSection">
-    <legend>Keyboard Shortcuts</legend>
-    <dl>
-      <dt><kbd>Space</kbd></dt>
-      <dd>Play/Pause</dd>
+      <label class="settings-leave-warning">
+        <input type="checkbox" id="showLeaveWarning" checked />
+        Warn When Leaving Site During Playback
+      </label>
 
-      <dt><kbd>↑</kbd></dt>
-      <dd>Previous Track</dd>
-      
-      <dt><kbd>↓</kbd></dt>
-      <dd>Next Track</dd>
-      
-      <dt><kbd>→</kbd></dt>
-      <dd>Fast Forward</dd>
-      
-      <dt><kbd>←</kbd></dt>
-      <dd>Rewind</dd>
-      
-      <dt><kbd>w</kbd></dt>
-      <dd>Add to Wishlist</dd>
-    </dl>
-  </fieldset>
-</body>
+      <label class="settings-sticky-player">
+        <input type="checkbox" id="stickyPlayer" checked />
+        Pin Player at Top of Album Page
+      </label>
+
+      <label class="settings-auto-play-next">
+        <input type="checkbox" id="autoPlayNext" checked />
+        Play Next Track Automatically
+      </label>
+
+      <label class="settings-progress-bar">
+        <input type="checkbox" id="showProgressBar" checked />
+        Show Progress Bar on Feed Page
+      </label>
+
+      <label class="settings-keyboard-shortcuts">
+        <input type="checkbox" id="enableKeyboardShortcuts" checked />
+        Enable Keyboard Shortcuts
+      </label>
+
+      <div class="settings-seek-duration" id="seekDurationSection">
+        <label>
+          <input
+            type="number"
+            id="seekSeconds"
+            min="5"
+            max="60"
+            step="5"
+            value="30"
+          />
+          Skip Duration (seconds)
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="shortcuts" id="keyboardShortcutsSection">
+      <legend>Keyboard Shortcuts</legend>
+      <dl>
+        <dt><kbd>Space</kbd></dt>
+        <dd>Play/Pause</dd>
+
+        <dt><kbd>↑</kbd></dt>
+        <dd>Previous Track</dd>
+
+        <dt><kbd>↓</kbd></dt>
+        <dd>Next Track</dd>
+
+        <dt><kbd>→</kbd></dt>
+        <dd>Fast Forward</dd>
+
+        <dt><kbd>←</kbd></dt>
+        <dd>Rewind</dd>
+
+        <dt><kbd>w</kbd></dt>
+        <dd>Add to Wishlist</dd>
+      </dl>
+    </fieldset>
+  </body>
 </html>
