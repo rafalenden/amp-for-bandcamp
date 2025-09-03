@@ -33,9 +33,13 @@ This project includes npm scripts to help with building the extension for differ
 - Xcode (for Safari extension)
 - zip command-line utility (for Chrome/Firefox packages)
 
-### Build Commands
+### Setup and Build
 
 ```bash
+# Install packages and playwright dependencies
+npm i
+npx playwright install
+
 # Build for all platforms
 npm run build
 
@@ -47,7 +51,7 @@ npm run build:safari
 ```
 
 All build artifacts will be placed in the `dist` directory:
-- `dist/amp-for-bandcamp.zip` - Chrome/Firefox extension package
+- `dist/amp-for-bandcamp.zip` - Chrome/Opera/Edge/Firefox extension package
 - `dist/safari` - Safari build output (compiled extension)
 
 ## Installation (from sources)

@@ -55,7 +55,7 @@ export class AlbumPage extends BasePage {
             player.style.backgroundColor = `#${designData.body_color}`;
           }
         } catch (e) {
-          console.error('Error parsing design data:', e);
+          console.error('[amp-for-bandcamp] Error parsing design data:', e);
         }
       }
     }

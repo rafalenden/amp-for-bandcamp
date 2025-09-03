@@ -1,14 +1,23 @@
 async function init() {
   try {
-    const { DEFAULT_SETTINGS } = await import('../constants.js');
-    const { AlbumPage } = await import('../content-pages/AlbumPage.js');
-    const { CollectionPage } = await import(
-      '../content-pages/CollectionPage.js'
+    const { DEFAULT_SETTINGS } = await import(
+      browser.runtime.getURL('src/constants.js')
     );
-    const { FeedPage } = await import('../content-pages/FeedPage.js');
-    const { DiscoverPage } = await import('../content-pages/DiscoverPage.js');
+    const { AlbumPage } = await import(
+      browser.runtime.getURL('src/content-pages/AlbumPage.js')
+    );
+    const { CollectionPage } = await import(
+      browser.runtime.getURL('src/content-pages/CollectionPage.js')
+    );
+    const { FeedPage } = await import(
+      browser.runtime.getURL('src/content-pages/FeedPage.js')
+    );
+    const { DiscoverPage } = await import(
+      browser.runtime.getURL('src/content-pages/DiscoverPage.js')
+    );
 
     const settings = await browser.storage.sync.get(DEFAULT_SETTINGS);
+
     if (AlbumPage.isMatch()) {
       new AlbumPage(settings).init();
     } else if (CollectionPage.isMatch()) {
@@ -19,7 +28,7 @@ async function init() {
       new DiscoverPage(settings).init();
     }
   } catch (error) {
-    console.error('Error initializing extension:', error);
+    console.error('[amp-for-bandcamp] Error initializing extension:', error);
   }
 }
 

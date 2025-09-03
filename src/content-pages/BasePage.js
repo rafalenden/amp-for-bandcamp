@@ -114,8 +114,11 @@ export class BasePage {
           this.applySettingsChanges(changes);
         }
       });
-    } catch (error) {
-      console.error('Error setting up settings listener:', error);
+    } catch (e) {
+      console.error(
+        '[amp-for-bandcamp] Error setting up settings listener:',
+        e,
+      );
     }
   }
 
