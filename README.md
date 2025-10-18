@@ -21,7 +21,7 @@ A multi-browser extension (Chrome, Firefox, Safari) that amplifies Bandcamp func
   - **Down Arrow**: Previous track
   - **Right Arrow**: Fast forward
   - **Left Arrow**: Rewind
-  - **w**: Add a current song to the wishlist
+  - **w**: Wishlist
 
 ## Building
 
@@ -33,12 +33,11 @@ This project includes npm scripts to help with building the extension for differ
 - Xcode (for Safari extension)
 - zip command-line utility (for Chrome/Firefox packages)
 
-### Setup and Build
+### Build
 
 ```bash
-# Install packages and playwright dependencies
+# Install packages
 npm i
-npx playwright install
 
 # Build for all platforms
 npm run build
@@ -87,6 +86,11 @@ After finishing the "build" step from the above, you can now proceed to the inst
 ## Testing
 
 The extension uses [Playwright](https://playwright.dev/) for end-to-end testing. The tests verify that the core functionality works correctly on different Bandcamp pages.
+
+### Install Playwright Dependencies
+```bash
+npx playwright install
+```
 
 ### Running Tests
 
