@@ -48,4 +48,61 @@ export class DiscoverPage extends BasePage {
   addToWishlist() {
     document.querySelector('.wishlist-button')?.click();
   }
+
+  seekToPosition(position) {
+    const slider = document.querySelector('.seek-control');
+    if (!slider) return;
+
+    const rect = slider.getBoundingClientRect();
+    const clickX = rect.left + rect.width * position;
+
+    slider.value = position;
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    slider.dispatchEvent(new Event('change', { bubbles: true }));
+
+    slider.dispatchEvent(
+      new MouseEvent('mousedown', {
+        bubbles: true,
+        clientX: clickX,
+      }),
+    );
+    slider.dispatchEvent(
+      new MouseEvent('mouseup', {
+        bubbles: true,
+        clientX: clickX,
+      }),
+    );
+  }
+
+  fastForward() {
+    const slider = document.querySelector('.seek-control');
+    const totalTimeSpan = document.querySelector('.playback-time.total');
+    if (!slider || !totalTimeSpan) return;
+
+    const [minutes, seconds] = totalTimeSpan.textContent.split(':').map(Number);
+    const totalSeconds = minutes * 60 + seconds;
+
+    const currentSeconds = slider.value * totalSeconds;
+    const seekTime = this.settings.seekSeconds;
+    const newSeconds = Math.min(currentSeconds + seekTime, totalSeconds);
+    const newPosition = newSeconds / totalSeconds;
+
+    this.seekToPosition(newPosition);
+  }
+
+  rewind() {
+    const slider = document.querySelector('.seek-control');
+    const totalTimeSpan = document.querySelector('.playback-time.total');
+    if (!slider || !totalTimeSpan) return;
+
+    const [minutes, seconds] = totalTimeSpan.textContent.split(':').map(Number);
+    const totalSeconds = minutes * 60 + seconds;
+
+    const currentSeconds = slider.value * totalSeconds;
+    const seekTime = this.settings.seekSeconds;
+    const newSeconds = Math.max(0, currentSeconds - seekTime);
+    const newPosition = newSeconds / totalSeconds;
+
+    this.seekToPosition(newPosition);
+  }
 }
