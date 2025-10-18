@@ -38,24 +38,48 @@ export class FeedPage extends BasePage {
   }
 
   nextSong() {
-    const nextTrack = document
-      .querySelector('.collection-item-container.playing:last-child')
-      ?.parentElement?.nextElementSibling?.querySelector('.tralbum-art-large');
-    if (nextTrack) {
-      nextTrack.click();
-      nextTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const currentStory = document.querySelector(
+      '.collection-item-container.playing:last-child',
+    )?.parentElement;
+    if (!currentStory) {
+      return;
+    }
+
+    // Find the next playable story by skipping non-playable ones
+    let nextStory = currentStory.nextElementSibling;
+    while (nextStory) {
+      const nextTrack = nextStory.querySelector(
+        '.track_play_hilite .tralbum-art-large',
+      );
+      if (nextTrack) {
+        nextTrack.click();
+        nextTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      nextStory = nextStory.nextElementSibling;
     }
   }
 
   prevSong() {
-    const prevTrack = document
-      .querySelector('.collection-item-container.playing:last-child')
-      ?.parentElement?.previousElementSibling?.querySelector(
-        '.tralbum-art-large',
+    const currentStory = document.querySelector(
+      '.collection-item-container.playing:last-child',
+    )?.parentElement;
+    if (!currentStory) {
+      return;
+    }
+
+    // Find the previous playable story by skipping non-playable ones
+    let prevStory = currentStory.previousElementSibling;
+    while (prevStory) {
+      const prevTrack = prevStory.querySelector(
+        '.track_play_hilite .tralbum-art-large',
       );
-    if (prevTrack) {
-      prevTrack.click();
-      prevTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (prevTrack) {
+        prevTrack.click();
+        prevTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      prevStory = prevStory.previousElementSibling;
     }
   }
 

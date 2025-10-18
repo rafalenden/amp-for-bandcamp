@@ -1,6 +1,6 @@
 {
   "name": "amp-for-bandcamp",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "type": "module",
   "description": "Amplifies Bandcamp functionality with playback controls and UI improvements",
   "keywords": [
