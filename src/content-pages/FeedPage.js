@@ -39,7 +39,7 @@ export class FeedPage extends BasePage {
 
   nextSong() {
     const nextTrack = document
-      .querySelector('.collection-item-container.playing')
+      .querySelector('.collection-item-container.playing:last-child')
       ?.parentElement?.nextElementSibling?.querySelector('.tralbum-art-large');
     if (nextTrack) {
       nextTrack.click();
@@ -49,7 +49,7 @@ export class FeedPage extends BasePage {
 
   prevSong() {
     const prevTrack = document
-      .querySelector('.collection-item-container.playing')
+      .querySelector('.collection-item-container.playing:last-child')
       ?.parentElement?.previousElementSibling?.querySelector(
         '.tralbum-art-large',
       );
@@ -76,7 +76,7 @@ export class FeedPage extends BasePage {
       }
 
       const target = document.querySelector(
-        '.collection-item-container.playing',
+        '.collection-item-container.playing:last-child',
       );
 
       if (!target) return;
