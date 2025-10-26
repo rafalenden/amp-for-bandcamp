@@ -13,6 +13,26 @@ export class DiscoverPage extends BasePage {
     return !!document.querySelector('#DiscoverApp');
   }
 
+  setupAutoPlayNext() {
+    if (this.autoPlayInterval) {
+      clearInterval(this.autoPlayInterval);
+    }
+
+    if (!this.settings.autoPlayNext) {
+      return;
+    }
+
+    this.autoPlayInterval = setInterval(() => {
+      const totalSeconds = this._getPlaybackTotalSeconds();
+      const currentSeconds = this._getPlaybackCurrentSeconds();
+      if (!totalSeconds || !currentSeconds) return;
+
+      if (totalSeconds - currentSeconds <= 1) {
+        this.nextSong();
+      }
+    }, 700);
+  }
+
   togglePlayPause() {
     document.querySelector('.focused-result .play-pause-button')?.click();
   }
@@ -49,7 +69,7 @@ export class DiscoverPage extends BasePage {
     document.querySelector('.wishlist-button')?.click();
   }
 
-  seekToPosition(position) {
+  _seekToPosition(position) {
     const slider = document.querySelector('.seek-control');
     if (!slider) return;
 
@@ -74,35 +94,54 @@ export class DiscoverPage extends BasePage {
     );
   }
 
+  _getPlaybackTotalSeconds() {
+    const totalTimeSpan = document.querySelector('.playback-time.total');
+    if (!totalTimeSpan) {
+      return;
+    }
+    const [minutes, seconds] = totalTimeSpan.textContent.split(':').map(Number);
+    return minutes * 60 + seconds;
+  }
+
+  _getPlaybackCurrentSeconds() {
+    const currentTimeSpan = document.querySelector('.playback-time.current');
+    if (!currentTimeSpan) {
+      return;
+    }
+    const [minutes, seconds] = currentTimeSpan.textContent.split(':').map(Number);
+    return minutes * 60 + seconds;
+  }
+
   fastForward() {
     const slider = document.querySelector('.seek-control');
-    const totalTimeSpan = document.querySelector('.playback-time.total');
-    if (!slider || !totalTimeSpan) return;
+    const playbackTotalSeconds = this._getPlaybackTotalSeconds();
+    if (!slider || !playbackTotalSeconds) {
+      return;
+    }
 
-    const [minutes, seconds] = totalTimeSpan.textContent.split(':').map(Number);
-    const totalSeconds = minutes * 60 + seconds;
-
-    const currentSeconds = slider.value * totalSeconds;
+    const currentSeconds = slider.value * playbackTotalSeconds;
     const seekTime = this.settings.seekSeconds;
-    const newSeconds = Math.min(currentSeconds + seekTime, totalSeconds);
-    const newPosition = newSeconds / totalSeconds;
+    const newSeconds = Math.min(
+      currentSeconds + seekTime,
+      playbackTotalSeconds,
+    );
+    const newPosition = newSeconds / playbackTotalSeconds;
 
-    this.seekToPosition(newPosition);
+    this._seekToPosition(newPosition);
   }
 
   rewind() {
     const slider = document.querySelector('.seek-control');
-    const totalTimeSpan = document.querySelector('.playback-time.total');
-    if (!slider || !totalTimeSpan) return;
+    const playbackTotalSeconds = this._getPlaybackTotalSeconds();
+    if (!slider || !playbackTotalSeconds) {
+      return;
+    }
 
-    const [minutes, seconds] = totalTimeSpan.textContent.split(':').map(Number);
-    const totalSeconds = minutes * 60 + seconds;
-
-    const currentSeconds = slider.value * totalSeconds;
+    const currentSeconds = slider.value * playbackTotalSeconds;
     const seekTime = this.settings.seekSeconds;
     const newSeconds = Math.max(0, currentSeconds - seekTime);
-    const newPosition = newSeconds / totalSeconds;
+    const newPosition = newSeconds / playbackTotalSeconds;
 
-    this.seekToPosition(newPosition);
+    this._seekToPosition(newPosition);
   }
 }
