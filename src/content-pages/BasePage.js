@@ -38,7 +38,8 @@ export class BasePage {
       if (
         !this.settings.enableKeyboardShortcuts ||
         e.target.tagName === 'INPUT' ||
-        e.target.tagName === 'TEXTAREA'
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.tagName === 'MENU-BAR'
       ) {
         return;
       }
