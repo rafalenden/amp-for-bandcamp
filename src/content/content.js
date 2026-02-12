@@ -15,10 +15,15 @@ async function init() {
     const { DiscoverPage } = await import(
       browser.runtime.getURL('src/content-pages/DiscoverPage.js')
     );
+    const { LivePage } = await import(
+      browser.runtime.getURL('src/content-pages/LivePage.js')
+    );
 
     const settings = await browser.storage.sync.get(DEFAULT_SETTINGS);
 
-    if (AlbumPage.isMatch()) {
+    if (LivePage.isMatch()) {
+      new LivePage(settings).init();
+    } else if (AlbumPage.isMatch()) {
       new AlbumPage(settings).init();
     } else if (CollectionPage.isMatch()) {
       new CollectionPage(settings).init();
