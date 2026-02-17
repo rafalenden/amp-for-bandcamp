@@ -24,7 +24,8 @@
     "build:safari": "xcodebuild -project 'safari/Amp for Bandcamp.xcodeproj' -scheme 'Amp for Bandcamp (macOS)' -configuration Release -derivedDataPath dist/safari clean build",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "version": "bash -c 'if [ -z \"$1\" ]; then node -p \"require(\\\"./package.json\\\").version\"; else sed -i \"\" \"s/^  \\\"version\\\": \\\"[^\\\"]*\\\"/  \\\"version\\\": \\\"$1\\\"/\" package.json manifest.json && sed -i \"\" \"s/MARKETING_VERSION = .*/MARKETING_VERSION = $1/\" safari/xcconfig/Base.xcconfig; fi' _"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
