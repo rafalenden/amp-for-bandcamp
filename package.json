@@ -1,6 +1,6 @@
 {
   "name": "amp-for-bandcamp",
-  "version": "1.3.1",
+  "version": "1.4.1",
   "type": "module",
   "description": "Amplifies Bandcamp functionality with playback controls and UI improvements",
   "keywords": [
@@ -16,7 +16,7 @@
   "author": "Rafal Enden",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rafenden/amp-for-bandcamp.git"
+    "url": "https://github.com/rafalenden/amp-for-bandcamp.git"
   },
   "scripts": {
     "build": "npm run build:zip && npm run build:safari",

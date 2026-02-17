@@ -14,6 +14,11 @@
   transition: width 0.1s linear;
 }
 
+.album-art-progress {
+  margin-top: -6px;
+  border-radius: 0;
+}
+
 .sticky {
   position: sticky !important;
   top: 55px;

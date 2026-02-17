@@ -23,7 +23,9 @@ export class BasePage {
   }
 
   getAudioElement() {
-    return document.querySelector('audio');
+    const audios = document.querySelectorAll('audio');
+    const playing = [...audios].find((a) => !a.paused);
+    return playing || audios[0] || null;
   }
 
   applyVolumeOverride() {
