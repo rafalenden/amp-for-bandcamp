@@ -150,6 +150,20 @@ export class FeedPage extends BasePage {
     }
   }
 
+  openCurrentTrack() {
+    const container = document.querySelector(
+      '.collection-item-container.playing:last-child',
+    );
+    if (!container) return;
+
+    const link = container.querySelector(
+      'a[href*="/album/"], a[href*="/track/"]',
+    );
+    if (link) {
+      window.open(link.href, '_blank');
+    }
+  }
+
   addToWishlist() {
     document
       .querySelector(

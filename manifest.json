@@ -2,7 +2,7 @@
   "manifest_version": 3,
   
   "name": "Amp for Bandcamp",
-  "version": "1.4.1",
+  "version": "1.5.1",
   "description": "Amplifies Bandcamp functionality with playback controls and UI improvements",
 
   "icons": {

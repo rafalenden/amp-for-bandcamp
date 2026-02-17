@@ -99,6 +99,20 @@ export class CollectionPage extends BasePage {
     }
   }
 
+  openCurrentTrack() {
+    const container = document.querySelector(
+      '.collection-item-container.playing',
+    );
+    if (!container) return;
+
+    const link = container.querySelector(
+      'a[href*="/album/"], a[href*="/track/"]',
+    );
+    if (link) {
+      window.open(link.href, '_blank');
+    }
+  }
+
   addToWishlist() {
     document.querySelector('.wishlisted-msg.collection-btn')?.click();
   }

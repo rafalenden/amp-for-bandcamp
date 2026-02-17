@@ -75,6 +75,10 @@ export class BasePage {
           e.preventDefault();
           this.addToWishlist();
           break;
+        case 'Enter':
+          e.preventDefault();
+          this.openCurrentTrack();
+          break;
       }
     });
   }
@@ -106,6 +110,8 @@ export class BasePage {
   prevSong() {}
 
   addToWishlist() {}
+
+  openCurrentTrack() {}
 
   setupSettingsListeners() {
     try {

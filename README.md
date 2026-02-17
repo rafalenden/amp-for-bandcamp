@@ -11,17 +11,11 @@ A multi-browser extension (Chrome, Firefox, Safari) that amplifies Bandcamp func
 
 ## Features
 
-- Auto-play next song when current song ends
-- Sticky inline player that stays visible as you scroll on the album page
-- Progress bar for currently playing track on feed and discover pages
-- Support for album, collection, feed, and discover pages
-- Keyboard shortcuts for playback control:
-  - **Space**: Play/pause
-  - **Up Arrow**: Next track
-  - **Down Arrow**: Previous track
-  - **Right Arrow**: Fast forward
-  - **Left Arrow**: Rewind
-  - **w**: Wishlist
+- Volume control slider
+- Auto-play the next track when the current one ends
+- Sticky mini-player that remains visible while scrolling on album pages
+- Playback progress indicator for the currently playing track on Feed and Discover
+- Keyboard shortcuts for play/pause, seek, next/previous
 
 ## Building
 

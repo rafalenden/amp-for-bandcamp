@@ -65,6 +65,20 @@ export class DiscoverPage extends BasePage {
     }
   }
 
+  openCurrentTrack() {
+    const currentTrack = document
+      .querySelector('.pause-circle-outline-icon')
+      ?.closest('.results-grid-item');
+    if (!currentTrack) return;
+
+    const link = currentTrack.querySelector(
+      'a[href*="/album/"], a[href*="/track/"]',
+    );
+    if (link) {
+      window.open(link.href, '_blank');
+    }
+  }
+
   addToWishlist() {
     document.querySelector('.wishlist-button')?.click();
   }

@@ -140,6 +140,15 @@ export class AlbumPage extends BasePage {
     }
   }
 
+  openCurrentTrack() {
+    const playingRelatedTrack = this._getPlayingRelatedTrack();
+    if (playingRelatedTrack) {
+      const url =
+        playingRelatedTrack.parentElement.querySelector('a.album-link').href;
+      window.open(url, '_blank');
+    }
+  }
+
   _setupStickyPlayer() {
     const player = document.querySelector('.inline_player');
     if (!player) {
