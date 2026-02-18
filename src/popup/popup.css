@@ -9,6 +9,7 @@
   --kbd-border: #ddd;
   --footer-text-color: #666666;
   --footer-border: rgba(0, 0, 0, 0.1);
+  --settings-help-bg-hover: #ddd;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,6 +19,7 @@
     --kbd-border: #3d3d3d;
     --footer-text-color: #999999;
     --footer-border: rgba(255, 255, 255, 0.15);
+    --settings-help-bg-hover: #3d3d3d;
   }
 }
 
@@ -134,4 +136,16 @@ footer {
 .settings-volume span {
   width: 30px;
   display: inline-block;
+}
+
+.settings-help {
+  border: 1px solid var(--text-color);
+  border-radius: 100%;
+  padding: 0 4px;
+  font-size: 10px;
+  font-family: monospace;
+}
+
+.settings-help:hover {
+  background: var(--settings-help-bg-hover);
 }

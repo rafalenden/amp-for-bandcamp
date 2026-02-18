@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS } from '../constants.js';
+import { DEFAULT_SETTINGS, MAX_SEEK_DURATION } from '../constants.js';
 
 const stickyPlayerToggle = document.getElementById('stickyPlayer');
 const autoPlayNextToggle = document.getElementById('autoPlayNext');
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showProgressBarToggle.checked = items.showProgressBar;
       enableKeyboardShortcutsToggle.checked = items.enableKeyboardShortcuts;
       seekSecondsInput.value = items.seekSeconds;
+      seekSecondsInput.setAttribute('max', MAX_SEEK_DURATION);
       volumeSlider.value = items.volume;
       volumeValue.textContent = `${items.volume}%`;
       updateKeyboardShortcutsVisibility(items.enableKeyboardShortcuts);
@@ -72,7 +73,7 @@ enableKeyboardShortcutsToggle.addEventListener('change', () => {
 seekSecondsInput.addEventListener('change', () => {
   const value = Math.min(
     Math.max(parseInt(seekSecondsInput.value) || 30, 5),
-    60,
+    MAX_SEEK_DURATION,
   );
   seekSecondsInput.value = value;
   browser.storage.sync.set({ seekSeconds: value }).catch(console.error);

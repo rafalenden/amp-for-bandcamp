@@ -27,40 +27,39 @@
 
       <label class="settings-leave-warning">
         <input type="checkbox" id="showLeaveWarning" checked />
-        Warn When Leaving Site During Playback
+        Warn when leaving the site during playback
       </label>
 
       <label class="settings-sticky-player">
         <input type="checkbox" id="stickyPlayer" checked />
-        Pin Player at Top of Album Page
+        Pin player to the top of the album page
       </label>
 
       <label class="settings-auto-play-next">
         <input type="checkbox" id="autoPlayNext" checked />
-        Play Next Track Automatically
+        Play next track automatically
       </label>
 
       <label class="settings-progress-bar">
         <input type="checkbox" id="showProgressBar" checked />
-        Show Progress Bar on Feed and Album Page
+        Show progress bar on supported pages
+        <span
+          class="settings-help"
+          title="Currently, the custom progress bar is supported on the feed and album pages (for related tracks)."
+        >
+          i
+        </span>
       </label>
 
       <label class="settings-keyboard-shortcuts">
         <input type="checkbox" id="enableKeyboardShortcuts" checked />
-        Enable Keyboard Shortcuts
+        Enable keyboard shortcuts
       </label>
 
       <div class="settings-seek-duration" id="seekDurationSection">
         <label>
-          <input
-            type="number"
-            id="seekSeconds"
-            min="5"
-            max="60"
-            step="5"
-            value="30"
-          />
-          Skip Duration (seconds)
+          <input type="number" id="seekSeconds" min="5" step="5" value="30" />
+          Skip duration (seconds)
         </label>
       </div>
     </fieldset>
@@ -69,25 +68,25 @@
       <legend>Keyboard Shortcuts</legend>
       <dl>
         <dt><kbd>space</kbd></dt>
-        <dd>Play/Pause</dd>
+        <dd>Play/pause</dd>
 
         <dt><kbd>↑</kbd></dt>
-        <dd>Previous Track</dd>
+        <dd>Previous track</dd>
 
         <dt><kbd>↓</kbd></dt>
-        <dd>Next Track</dd>
+        <dd>Next track</dd>
 
         <dt><kbd>→</kbd></dt>
-        <dd>Fast Forward</dd>
+        <dd>Seek forward</dd>
 
         <dt><kbd>←</kbd></dt>
-        <dd>Rewind</dd>
+        <dd>Seek backward</dd>
 
         <dt><kbd>w</kbd></dt>
-        <dd>Wishlist Track</dd>
+        <dd>Add track to wishlist</dd>
 
         <dt><kbd>enter</kbd></dt>
-        <dd>Open Track</dd>
+        <dd>Open track in a new tab</dd>
       </dl>
     </fieldset>
   </body>
