@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
+  node -p "require(\"./package.json\").version"
+else
+  sed -i "" "s/^  \"version\": \"[^\"]*\"/  \"version\": \"$1\"/" package.json manifest.json
+  sed -i "" "s/MARKETING_VERSION = .*/MARKETING_VERSION = $1/" safari/xcconfig/Base.xcconfig
+fi

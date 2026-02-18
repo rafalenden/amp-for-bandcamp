@@ -108,9 +108,9 @@ export class AlbumPage extends BasePage {
       );
 
     if (isPlayingFirstTrackFromRecommended) {
-      const lastTrackFromAlbum = document.querySelector(
-        '#track_table tr:last-child .play_status',
-      );
+      const lastTrackFromAlbum =
+        document.querySelector('#track_table tr:last-child .play_status') ??
+        document.querySelector('.playbutton');
       lastTrackFromAlbum?.click();
       lastTrackFromAlbum?.scrollIntoView({
         behavior: 'smooth',
