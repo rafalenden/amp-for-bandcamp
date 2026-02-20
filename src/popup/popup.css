@@ -86,8 +86,8 @@ fieldset {
 }
 
 .settings input[type="range"] {
-  flex: 1;
-  margin: 0 8px;
+  width: 150px;
+  flex: 0 0 150px;
 }
 
 .shortcuts dl {
@@ -133,9 +133,11 @@ footer {
   border-top: 1px solid var(--footer-border);
 }
 
-.settings-volume span {
+.settings-slider span {
   width: 30px;
   display: inline-block;
+  margin-left: auto;
+  text-align: right;
 }
 
 .settings-help {

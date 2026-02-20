@@ -8,6 +8,7 @@ const enableKeyboardShortcutsToggle = document.getElementById(
   'enableKeyboardShortcuts',
 );
 const seekSecondsInput = document.getElementById('seekSeconds');
+const seekSecondsValue = document.getElementById('seekSecondsValue');
 const volumeSlider = document.getElementById('volumeSlider');
 const volumeValue = document.getElementById('volumeValue');
 const keyboardShortcutsSection = document.getElementById(
@@ -16,8 +17,8 @@ const keyboardShortcutsSection = document.getElementById(
 const seekDurationSection = document.getElementById('seekDurationSection');
 
 function updateKeyboardShortcutsVisibility(enabled) {
-  keyboardShortcutsSection.style.display = enabled ? 'block' : 'none';
-  seekDurationSection.style.display = enabled ? 'block' : 'none';
+  keyboardShortcutsSection.style.display = enabled ? '' : 'none';
+  seekDurationSection.style.display = enabled ? '' : 'none';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showProgressBarToggle.checked = items.showProgressBar;
       enableKeyboardShortcutsToggle.checked = items.enableKeyboardShortcuts;
       seekSecondsInput.value = items.seekSeconds;
+      seekSecondsValue.textContent = `${items.seekSeconds}s`;
       seekSecondsInput.setAttribute('max', MAX_SEEK_DURATION);
       volumeSlider.value = items.volume;
       volumeValue.textContent = `${items.volume}%`;
@@ -70,12 +72,13 @@ enableKeyboardShortcutsToggle.addEventListener('change', () => {
   updateKeyboardShortcutsVisibility(enabled);
 });
 
-seekSecondsInput.addEventListener('change', () => {
+seekSecondsInput.addEventListener('input', () => {
   const value = Math.min(
     Math.max(parseInt(seekSecondsInput.value) || 30, 5),
     MAX_SEEK_DURATION,
   );
   seekSecondsInput.value = value;
+  seekSecondsValue.textContent = `${value}s`;
   browser.storage.sync.set({ seekSeconds: value }).catch(console.error);
 });
 
