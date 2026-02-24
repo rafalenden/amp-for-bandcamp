@@ -2,7 +2,7 @@
   "manifest_version": 3,
   
   "name": "Amp for Bandcamp",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Amplifies Bandcamp functionality with playback controls and UI improvements",
 
   "icons": {
@@ -32,6 +32,8 @@
       "matches": ["*://*.bandcamp.com/*"],
       "css": ["src/content/content.css"],
       "js": [
+        "vendor/module-shim.js",
+        "vendor/realtime-bpm-analyzer.js",
         "vendor/webextension-polyfill.min.js",
         "src/content/content.js"]
     }

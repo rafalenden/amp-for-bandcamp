@@ -16,6 +16,8 @@ const keyboardShortcutsSection = document.getElementById(
 );
 const seekDurationSection = document.getElementById('seekDurationSection');
 
+seekSecondsInput.setAttribute('max', MAX_SEEK_DURATION);
+
 function updateKeyboardShortcutsVisibility(enabled) {
   keyboardShortcutsSection.style.display = enabled ? '' : 'none';
   seekDurationSection.style.display = enabled ? '' : 'none';
@@ -32,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
       enableKeyboardShortcutsToggle.checked = items.enableKeyboardShortcuts;
       seekSecondsInput.value = items.seekSeconds;
       seekSecondsValue.textContent = `${items.seekSeconds}s`;
-      seekSecondsInput.setAttribute('max', MAX_SEEK_DURATION);
       volumeSlider.value = items.volume;
       volumeValue.textContent = `${items.volume}%`;
       updateKeyboardShortcutsVisibility(items.enableKeyboardShortcuts);
