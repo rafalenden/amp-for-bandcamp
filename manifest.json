@@ -2,7 +2,7 @@
   "manifest_version": 3,
   
   "name": "Amp for Bandcamp",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Amplifies Bandcamp functionality with playback controls and UI improvements",
 
   "icons": {
@@ -27,20 +27,23 @@
       "1024": "icons/icon1024.png"
     }
   },
+  "background": {
+    "service_worker": "src/background.js",
+    "scripts": ["src/background.js"]
+  },
+  "host_permissions": ["*://*.bcbits.com/*", "*://*.bandcamp.com/*"],
   "content_scripts": [
     {
       "matches": ["*://*.bandcamp.com/*"],
       "css": ["src/content/content.css"],
       "js": [
-        "vendor/module-shim.js",
-        "vendor/realtime-bpm-analyzer.js",
         "vendor/webextension-polyfill.min.js",
         "src/content/content.js"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["src/*"],
+      "resources": ["src/*", "vendor/*"],
       "matches": ["*://*.bandcamp.com/*"]
     }
   ],

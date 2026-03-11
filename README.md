@@ -12,10 +12,13 @@ A multi-browser extension (Chrome, Firefox, Safari) that amplifies Bandcamp func
 ## Features
 
 - Volume control slider
+- Configurable seek duration
 - Auto-play the next track when the current one ends
 - Sticky mini-player that remains visible while scrolling on album pages
-- Playback progress indicator for the currently playing track on Feed and Discover
-- Keyboard shortcuts for play/pause, seek, next/previous
+- Playback progress bar on feed and album pages
+- BPM detection on album pages
+- Warn when leaving the site during playback
+- Keyboard shortcuts (play/pause, seek, next/previous, wishlist, open track)
 
 ## Building
 

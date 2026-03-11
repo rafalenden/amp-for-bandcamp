@@ -1,17 +1,20 @@
 import { BasePage } from './BasePage.js';
+import { analyzeFullBuffer } from '../../vendor/realtime-bpm-analyzer.esm.js';
 
 export class AlbumPage extends BasePage {
   constructor(settings = {}) {
     super(settings);
     this.progressBarContainer = null;
     this._trackedAudios = new Set();
+    this._bpmCache = {};
   }
 
   init() {
     super.init();
 
-    this._setupStickyPlayer();
-    this._setupProgressBar();
+    this.setupStickyPlayer();
+    this.setupProgressBar();
+    this.setupBpmAnalyzer();
   }
 
   static isMatch() {
@@ -38,7 +41,7 @@ export class AlbumPage extends BasePage {
       const isPlayingLastTrackFromAlbum =
         document.querySelector('#track_table tr.current_track') ===
         document.querySelector('#track_table tr:last-child');
-      const isPlayingRelatedTrack = this._getPlayingRelatedTrack();
+      const isPlayingRelatedTrack = this.getPlayingRelatedTrack();
 
       if (
         isAudioEnding &&
@@ -53,10 +56,13 @@ export class AlbumPage extends BasePage {
     super.applySettingsChanges(changes);
 
     if (changes.stickyPlayer !== undefined) {
-      this._setupStickyPlayer();
+      this.setupStickyPlayer();
     }
     if (changes.showProgressBar !== undefined) {
-      this._setupProgressBar();
+      this.setupProgressBar();
+    }
+    if (changes.showBpm !== undefined) {
+      this.setupBpmAnalyzer();
     }
   }
 
@@ -74,7 +80,7 @@ export class AlbumPage extends BasePage {
     const isPlayingLastTrackFromAlbum =
       document.querySelector('#track_table tr.current_track') ===
       document.querySelector('#track_table tr:last-child');
-    const playingRelatedTrack = this._getPlayingRelatedTrack();
+    const playingRelatedTrack = this.getPlayingRelatedTrack();
 
     if (playingRelatedTrack) {
       playingRelatedTrack.parentElement.nextElementSibling
@@ -98,7 +104,7 @@ export class AlbumPage extends BasePage {
 
   prevSong() {
     const prevButton = document.querySelector('.prevbutton');
-    const playingRelatedTrack = this._getPlayingRelatedTrack();
+    const playingRelatedTrack = this.getPlayingRelatedTrack();
     const isPlayingFirstTrackFromRecommended =
       document.querySelector(
         '.recommendations-content .recommended-album .playing',
@@ -128,7 +134,7 @@ export class AlbumPage extends BasePage {
   }
 
   addToWishlist() {
-    const playingRelatedTrack = this._getPlayingRelatedTrack();
+    const playingRelatedTrack = this.getPlayingRelatedTrack();
     if (playingRelatedTrack) {
       const relatedTrackUrl =
         playingRelatedTrack.parentElement.querySelector('a.album-link').href;
@@ -141,7 +147,7 @@ export class AlbumPage extends BasePage {
   }
 
   openCurrentTrack() {
-    const playingRelatedTrack = this._getPlayingRelatedTrack();
+    const playingRelatedTrack = this.getPlayingRelatedTrack();
     if (playingRelatedTrack) {
       const url =
         playingRelatedTrack.parentElement.querySelector('a.album-link').href;
@@ -149,7 +155,7 @@ export class AlbumPage extends BasePage {
     }
   }
 
-  _setupStickyPlayer() {
+  setupStickyPlayer() {
     const player = document.querySelector('.inline_player');
     if (!player) {
       return;
@@ -160,30 +166,132 @@ export class AlbumPage extends BasePage {
       return;
     }
 
-    if (this.settings.stickyPlayer) {
-      player.classList.add('sticky');
+    player.classList.add('sticky');
 
-      const styleElement = document.getElementById('custom-design-rules-style');
-      if (styleElement) {
-        try {
-          const designData = JSON.parse(
-            styleElement.getAttribute('data-design'),
-          );
-          if (designData.body_color) {
-            player.style.backgroundColor = `#${designData.body_color}`;
-          }
-        } catch (e) {
-          console.error('[amp-for-bandcamp] Error parsing design data:', e);
+    const styleElement = document.getElementById('custom-design-rules-style');
+    if (styleElement) {
+      try {
+        const designData = JSON.parse(styleElement.getAttribute('data-design'));
+        if (designData.body_color) {
+          player.style.backgroundColor = `#${designData.body_color}`;
         }
+      } catch (e) {
+        console.error('[amp-for-bandcamp] Error parsing design data:', e);
       }
     }
   }
 
-  _getPlayingRelatedTrack() {
+  getPlayingRelatedTrack() {
     return document.querySelector('.recommended-album .playing');
   }
 
-  _setupProgressBar() {
+  getTrackUrls() {
+    const tralbumEl = document.querySelector('[data-tralbum]');
+    if (!tralbumEl) return {};
+
+    try {
+      const tralbum = JSON.parse(tralbumEl.dataset.tralbum);
+      const urls = {};
+      for (const track of tralbum.trackinfo || []) {
+        if (!track.file) continue;
+        const url = Object.values(track.file).find((u) =>
+          /https:\/\/\w+\.bcbits\.com/.test(u),
+        );
+        if (url) urls[track.track_num ?? 1] = url;
+      }
+      return urls;
+    } catch {
+      return {};
+    }
+  }
+
+  getCurrentTrackNum(trackUrls) {
+    const currentRow = document.querySelector(
+      '#track_table tr.current_track .track-number-col',
+    );
+    if (currentRow) return parseInt(currentRow.textContent);
+
+    // Single track page — return the first available track number
+    const nums = Object.keys(trackUrls).map(Number);
+    return nums[0] ?? 1;
+  }
+
+  setupBpmAnalyzer() {
+    if (!this.settings.showBpm) {
+      const bpmEl = document.querySelector('.bpm-display');
+      if (bpmEl) bpmEl.textContent = '';
+      return;
+    }
+
+    const trackUrls = this.getTrackUrls();
+    let lastTrackNum = null;
+
+    const ensureElement = () => {
+      let el = document.querySelector('.bpm-display');
+      if (!el) {
+        el = document.createElement('span');
+        el.className = 'bpm-display';
+        const time =
+          document.querySelector('.inline_player .time') ||
+          document.querySelector('#trackInfoInner .time');
+        if (time) time.appendChild(el);
+      }
+      return el;
+    };
+
+    const analyze = async (url) => {
+      if (this._bpmCache[url]) return this._bpmCache[url];
+
+      const { data } = await browser.runtime.sendMessage({
+        type: 'fetch',
+        url,
+      });
+      const arrayBuffer = new Uint8Array(data).buffer;
+
+      const audioContext = new AudioContext();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      const candidates = await analyzeFullBuffer(audioBuffer);
+      await audioContext.close();
+
+      const bpm = candidates?.[0] ? Math.round(candidates[0].tempo) : null;
+      if (bpm) this._bpmCache[url] = bpm;
+      return bpm;
+    };
+
+    const update = async () => {
+      if (!this.settings.showBpm) return;
+      const trackNum = this.getCurrentTrackNum(trackUrls);
+      if (trackNum === lastTrackNum) return;
+      lastTrackNum = trackNum;
+
+      const url = trackUrls[trackNum];
+      if (!url) return;
+
+      const bpmEl = ensureElement();
+      bpmEl.textContent = '';
+
+      try {
+        const bpm = await analyze(url);
+        if (bpm && this.getCurrentTrackNum(trackUrls) === trackNum) {
+          bpmEl.textContent = ` | ${bpm} BPM`;
+        }
+      } catch (error) {
+        console.error('[amp-for-bandcamp] BPM analysis error:', error);
+      }
+    };
+
+    update();
+
+    const trackTable = document.querySelector('#track_table');
+    if (trackTable) {
+      new MutationObserver(update).observe(trackTable, {
+        attributes: true,
+        subtree: true,
+      });
+    }
+  }
+
+  setupProgressBar() {
     if (!this.settings.showProgressBar) {
       if (this.progressBarContainer) {
         this.progressBarContainer.style.display = 'none';
@@ -195,7 +303,7 @@ export class AlbumPage extends BasePage {
       const audio = this.getAudioElement();
       if (!audio || audio.paused || !audio.duration) return;
 
-      const playingRelated = this._getPlayingRelatedTrack();
+      const playingRelated = this.getPlayingRelatedTrack();
       const container = playingRelated
         ? playingRelated.closest('.recommended-album')
         : document.querySelector('#tralbumArt');

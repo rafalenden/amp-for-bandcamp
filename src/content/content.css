@@ -19,6 +19,14 @@
   border-radius: 0;
 }
 
+.inline_player .time.secondaryText {
+  display: block;
+}
+
+.bpm-display {
+  opacity: 0.7;
+}
+
 .sticky {
   position: sticky !important;
   top: 55px;

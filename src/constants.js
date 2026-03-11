@@ -8,4 +8,5 @@ export const DEFAULT_SETTINGS = {
   showProgressBar: true,
   enableKeyboardShortcuts: true,
   volume: 100,
+  showBpm: true,
 };

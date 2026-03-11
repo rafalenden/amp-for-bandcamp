@@ -7,6 +7,7 @@ const showProgressBarToggle = document.getElementById('showProgressBar');
 const enableKeyboardShortcutsToggle = document.getElementById(
   'enableKeyboardShortcuts',
 );
+const showBpmToggle = document.getElementById('showBpm');
 const seekSecondsInput = document.getElementById('seekSeconds');
 const seekSecondsValue = document.getElementById('seekSecondsValue');
 const volumeSlider = document.getElementById('volumeSlider');
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showLeaveWarningToggle.checked = items.showLeaveWarning;
       showProgressBarToggle.checked = items.showProgressBar;
       enableKeyboardShortcutsToggle.checked = items.enableKeyboardShortcuts;
+      showBpmToggle.checked = items.showBpm;
       seekSecondsInput.value = items.seekSeconds;
       seekSecondsValue.textContent = `${items.seekSeconds}s`;
       volumeSlider.value = items.volume;
@@ -62,6 +64,12 @@ showLeaveWarningToggle.addEventListener('change', () => {
 showProgressBarToggle.addEventListener('change', () => {
   browser.storage.sync
     .set({ showProgressBar: showProgressBarToggle.checked })
+    .catch(console.error);
+});
+
+showBpmToggle.addEventListener('change', () => {
+  browser.storage.sync
+    .set({ showBpm: showBpmToggle.checked })
     .catch(console.error);
 });
 
