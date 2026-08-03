@@ -87,10 +87,12 @@ export class BasePage {
     const audio = this.getAudioElement();
     const seekTime = this.settings.seekSeconds;
 
-    if (audio && audio.duration - audio.currentTime > seekTime) {
+    if (!audio || audio.paused) {
+      return;
+    }
+
+    if (audio.duration - audio.currentTime > seekTime) {
       audio.currentTime += seekTime;
-    } else if (audio) {
-      audio.currentTime = audio.duration - 1;
     }
   }
 
