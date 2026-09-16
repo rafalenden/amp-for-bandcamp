@@ -1,6 +1,6 @@
 {
   "name": "amp-for-bandcamp",
-  "version": "1.7.1",
+  "version": "2.0.0",
   "type": "module",
   "description": "Amplifies Bandcamp functionality with playback controls and UI improvements",
   "keywords": [
@@ -13,22 +13,44 @@
     "edge-extension",
     "firefox-addon"
   ],
-  "author": "Rafal Enden",
+  "author": "Rafał Enden",
   "repository": {
     "type": "git",
     "url": "https://github.com/rafalenden/amp-for-bandcamp.git"
   },
   "scripts": {
-    "build": "npm run build:zip && npm run build:safari",
-    "build:zip": "zip -r dist/amp-for-bandcamp.zip manifest.json src/ vendor/ icons/",
-    "build:safari": "xcodebuild -project 'safari/Amp for Bandcamp.xcodeproj' -scheme 'Amp for Bandcamp (macOS)' -configuration Release -derivedDataPath dist/safari clean build",
+    "dev": "wxt",
+    "build": "wxt build && wxt build -b firefox && wxt build -b safari",
+    "build:safari:web": "wxt build -b safari",
+    "build:zip": "wxt zip && wxt zip -b firefox",
+    "build:safari": "npm run build:safari:web && xcodebuild -project 'safari/Amp for Bandcamp.xcodeproj' -scheme 'Amp for Bandcamp (macOS)' -configuration Release -derivedDataPath dist/safari clean build",
+    "build:all": "npm run build:zip && npm run build:safari",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare",
+    "pretest": "npm run build",
     "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug",
-    "version": "bash scripts/version"
+    "test:ui": "npm run build && playwright test --ui",
+    "test:debug": "npm run build && playwright test --debug",
+    "version": "bash scripts/version",
+    "ci": "npm run compile && npm run test:local",
+    "test:local": "npm test -- tests/Popup.spec.ts tests/Content.spec.ts",
+    "test:live": "npm test -- tests/AlbumPage.spec.ts tests/CollectionPage.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
-    "prettier": "^3.6.2"
+    "@types/node": "^22.20.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@wxt-dev/module-react": "^1.2.2",
+    "prettier": "^3.6.2",
+    "typescript": "^7.0.2",
+    "wxt": "^0.21.4"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

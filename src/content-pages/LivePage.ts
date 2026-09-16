@@ -1,11 +1,11 @@
-import { BasePage } from './BasePage.js';
+import { BasePage } from './BasePage';
 
 export class LivePage extends BasePage {
-  static isMatch() {
+  static override isMatch() {
     return window.location.pathname.startsWith('/live/');
   }
 
-  init() {
+  override init() {
     this.setupKeyboardShortcuts();
     this.setupSettingsListeners();
     this.setupPageLeaveWarning();
@@ -13,18 +13,20 @@ export class LivePage extends BasePage {
   }
 
   getVolumeControl() {
-    return document.querySelector('input.volume-control[type="range"]');
+    return document.querySelector<HTMLInputElement>(
+      'input.volume-control[type="range"]',
+    );
   }
 
-  applyVolumeOverride() {
+  override applyVolumeOverride() {
     const control = this.getVolumeControl();
     if (control && this.settings.volume !== undefined) {
-      control.value = this.settings.volume;
+      control.value = String(this.settings.volume);
       control.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
 
-  setupVolumeControl() {
+  override setupVolumeControl() {
     const control = this.getVolumeControl();
     if (control) {
       this.applyVolumeOverride();
@@ -33,7 +35,7 @@ export class LivePage extends BasePage {
     }
   }
 
-  setupPageLeaveWarning() {
+  override setupPageLeaveWarning() {
     if (this.pageLeaveHandler) {
       window.removeEventListener('beforeunload', this.pageLeaveHandler);
     }
@@ -49,7 +51,7 @@ export class LivePage extends BasePage {
     }
   }
 
-  addToWishlist() {
-    document.querySelector('.wishlist-button')?.click();
+  override addToWishlist() {
+    document.querySelector<HTMLElement>('.wishlist-button')?.click();
   }
 }

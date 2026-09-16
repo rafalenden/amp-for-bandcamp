@@ -1,35 +1,37 @@
-import { BasePage } from './BasePage.js';
+import type { Settings, SettingsChanges } from '../constants';
+import { BasePage } from './BasePage';
 
 export class FeedPage extends BasePage {
-  constructor(settings = {}) {
+  progressBarContainer: HTMLDivElement | null;
+  constructor(settings: Partial<Settings> = {}) {
     super(settings);
     this.progressBarContainer = null;
   }
 
-  init() {
+  override init() {
     super.init();
 
     this.setupProgressBar();
   }
 
-  static isMatch() {
-    return !!document.querySelector('#stories');
+  static override isMatch() {
+    return !!document.querySelector<HTMLElement>('#stories');
   }
 
-  togglePlayPause() {
-    const playingTrack = document.querySelector(
+  override togglePlayPause() {
+    const playingTrack = document.querySelector<HTMLElement>(
       '.track_play_hilite.playing .tralbum-art-large',
     );
     if (playingTrack) {
       playingTrack.click();
     } else {
-      const pausedTracks = document.querySelectorAll(
+      const pausedTracks = document.querySelectorAll<HTMLElement>(
         '.track_play_hilite.paused .tralbum-art-large',
       );
       if (pausedTracks.length > 0) {
-        pausedTracks[pausedTracks.length - 1].click();
+        pausedTracks[pausedTracks.length - 1]?.click();
       } else {
-        const firstTrack = document.querySelectorAll(
+        const firstTrack = document.querySelectorAll<HTMLElement>(
           '.track_play_hilite .tralbum-art-large',
         )[0];
         firstTrack?.click();
@@ -37,8 +39,8 @@ export class FeedPage extends BasePage {
     }
   }
 
-  nextSong() {
-    const currentStory = document.querySelector(
+  override nextSong() {
+    const currentStory = document.querySelector<HTMLElement>(
       '.collection-item-container.playing:last-child',
     )?.parentElement;
     if (!currentStory) {
@@ -48,7 +50,7 @@ export class FeedPage extends BasePage {
     // Find the next playable story by skipping non-playable ones
     let nextStory = currentStory.nextElementSibling;
     while (nextStory) {
-      const nextTrack = nextStory.querySelector(
+      const nextTrack = nextStory.querySelector<HTMLElement>(
         '.track_play_hilite .tralbum-art-large',
       );
       if (nextTrack) {
@@ -60,8 +62,8 @@ export class FeedPage extends BasePage {
     }
   }
 
-  prevSong() {
-    const currentStory = document.querySelector(
+  override prevSong() {
+    const currentStory = document.querySelector<HTMLElement>(
       '.collection-item-container.playing:last-child',
     )?.parentElement;
     if (!currentStory) {
@@ -71,7 +73,7 @@ export class FeedPage extends BasePage {
     // Find the previous playable story by skipping non-playable ones
     let prevStory = currentStory.previousElementSibling;
     while (prevStory) {
-      const prevTrack = prevStory.querySelector(
+      const prevTrack = prevStory.querySelector<HTMLElement>(
         '.track_play_hilite .tralbum-art-large',
       );
       if (prevTrack) {
@@ -99,7 +101,7 @@ export class FeedPage extends BasePage {
         return;
       }
 
-      const target = document.querySelector(
+      const target = document.querySelector<HTMLElement>(
         '.collection-item-container.playing:last-child',
       );
 
@@ -116,16 +118,17 @@ export class FeedPage extends BasePage {
         this.progressBarContainer.innerHTML =
           '<div class="playback-progress-inner"></div>';
 
-        (target.querySelector('.story-body') || target).appendChild(
-          this.progressBarContainer,
-        );
+        (
+          target.querySelector<HTMLElement>('.story-body') || target
+        ).appendChild(this.progressBarContainer);
       }
 
       if (audio.duration) {
-        const innerBar = this.progressBarContainer.querySelector(
+        const innerBar = this.progressBarContainer.querySelector<HTMLElement>(
           '.playback-progress-inner',
         );
-        innerBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+        if (innerBar)
+          innerBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
       }
 
       this.progressBarContainer.style.display = 'block';
@@ -142,7 +145,7 @@ export class FeedPage extends BasePage {
     if (!audio.paused) updateProgressBar();
   }
 
-  applySettingsChanges(changes) {
+  override applySettingsChanges(changes: SettingsChanges) {
     super.applySettingsChanges(changes);
 
     if (changes.showProgressBar !== undefined) {
@@ -150,13 +153,13 @@ export class FeedPage extends BasePage {
     }
   }
 
-  openCurrentTrack() {
-    const container = document.querySelector(
+  override openCurrentTrack() {
+    const container = document.querySelector<HTMLElement>(
       '.collection-item-container.playing:last-child',
     );
     if (!container) return;
 
-    const link = container.querySelector(
+    const link = container.querySelector<HTMLAnchorElement>(
       'a[href*="/album/"], a[href*="/track/"]',
     );
     if (link) {
@@ -164,9 +167,9 @@ export class FeedPage extends BasePage {
     }
   }
 
-  addToWishlist() {
+  override addToWishlist() {
     document
-      .querySelector(
+      .querySelector<HTMLElement>(
         '.collection-item-container.playing .collect-item.wishlisted .wishlisted-msg, .collection-item-container.playing .collect-item:not(.wishlisted) .wishlist-msg',
       )
       ?.click();

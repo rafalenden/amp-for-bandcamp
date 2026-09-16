@@ -1,24 +1,25 @@
-import { BasePage } from './BasePage.js';
+import type { Settings } from '../constants';
+import { BasePage } from './BasePage';
 
 export class CollectionPage extends BasePage {
-  constructor(settings = {}) {
+  constructor(settings: Partial<Settings> = {}) {
     super(settings);
   }
 
-  init() {
+  override init() {
     super.init();
     this.showTrackDetails();
     this.clickShowMore();
   }
 
-  static isMatch() {
-    return !!document.querySelector('.collection-container');
+  static override isMatch() {
+    return !!document.querySelector<HTMLElement>('.collection-container');
   }
 
   showTrackDetails() {
     const makeVisible = () => {
       document
-        .querySelectorAll(
+        .querySelectorAll<HTMLElement>(
           '.collection-item-actions, .collection-item-fav-track',
         )
         .forEach((action) => {
@@ -28,7 +29,9 @@ export class CollectionPage extends BasePage {
 
     makeVisible();
 
-    const container = document.querySelector('.collection-container');
+    const container = document.querySelector<HTMLElement>(
+      '.collection-container',
+    );
     if (container) {
       new MutationObserver(makeVisible).observe(container, {
         childList: true,
@@ -39,7 +42,7 @@ export class CollectionPage extends BasePage {
 
   clickShowMore() {
     const clickButtons = () => {
-      const buttons = document.querySelectorAll('.show-more');
+      const buttons = document.querySelectorAll<HTMLElement>('.show-more');
       if (buttons.length) {
         Array.from(buttons).forEach((btn) => btn.click());
       }
@@ -48,30 +51,37 @@ export class CollectionPage extends BasePage {
     clickButtons();
 
     const observer = new MutationObserver(clickButtons);
-    observer.observe(document.querySelector('.collection-container'), {
-      childList: true,
-      subtree: true,
-    });
+    const container = document.querySelector('.collection-container');
+    if (container)
+      observer.observe(container, {
+        childList: true,
+        subtree: true,
+      });
   }
 
-  togglePlayPause() {
-    const playButtonOnPlayer = document.querySelector('.pause, .play');
+  override togglePlayPause() {
+    const playButtonOnPlayer =
+      document.querySelector<HTMLElement>('.pause, .play');
     if (playButtonOnPlayer) {
       playButtonOnPlayer.click();
     } else {
-      document.querySelector('.track_play_auxiliary')?.click();
+      document.querySelector<HTMLElement>('.track_play_auxiliary')?.click();
     }
   }
 
-  nextSong() {
-    const nextTrackPlayer = document.querySelector('.next-icon:not(.disabled)');
+  override nextSong() {
+    const nextTrackPlayer = document.querySelector<HTMLElement>(
+      '.next-icon:not(.disabled)',
+    );
     if (nextTrackPlayer) {
       nextTrackPlayer.click();
       nextTrackPlayer.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
       const nextTrack = document
-        .querySelector('.collection-item-container.playing')
-        ?.nextElementSibling?.querySelector('.track_play_auxiliary');
+        .querySelector<HTMLElement>('.collection-item-container.playing')
+        ?.nextElementSibling?.querySelector<HTMLElement>(
+          '.track_play_auxiliary',
+        );
       if (nextTrack) {
         nextTrack.click();
         nextTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -81,15 +91,19 @@ export class CollectionPage extends BasePage {
     }
   }
 
-  prevSong() {
-    const prevTrackPlayer = document.querySelector('.prev-icon:not(.disabled)');
+  override prevSong() {
+    const prevTrackPlayer = document.querySelector<HTMLElement>(
+      '.prev-icon:not(.disabled)',
+    );
     if (prevTrackPlayer) {
       prevTrackPlayer.click();
       prevTrackPlayer.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
       const prevTrack = document
-        .querySelector('.collection-item-container.playing')
-        ?.previousElementSibling?.querySelector('.track_play_auxiliary');
+        .querySelector<HTMLElement>('.collection-item-container.playing')
+        ?.previousElementSibling?.querySelector<HTMLElement>(
+          '.track_play_auxiliary',
+        );
       if (prevTrack) {
         prevTrack.click();
         prevTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -99,13 +113,13 @@ export class CollectionPage extends BasePage {
     }
   }
 
-  openCurrentTrack() {
-    const container = document.querySelector(
+  override openCurrentTrack() {
+    const container = document.querySelector<HTMLElement>(
       '.collection-item-container.playing',
     );
     if (!container) return;
 
-    const link = container.querySelector(
+    const link = container.querySelector<HTMLAnchorElement>(
       'a[href*="/album/"], a[href*="/track/"]',
     );
     if (link) {
@@ -113,7 +127,9 @@ export class CollectionPage extends BasePage {
     }
   }
 
-  addToWishlist() {
-    document.querySelector('.wishlisted-msg.collection-btn')?.click();
+  override addToWishlist() {
+    document
+      .querySelector<HTMLElement>('.wishlisted-msg.collection-btn')
+      ?.click();
   }
 }

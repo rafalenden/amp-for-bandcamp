@@ -1,15 +1,21 @@
-import { BasePage } from './BasePage.js';
+import { browser } from 'wxt/browser';
+import type { FetchResponse } from '../types/messages';
+import type { Settings, SettingsChanges } from '../constants';
+import { BasePage } from './BasePage';
 import { analyzeFullBuffer } from '../../vendor/realtime-bpm-analyzer.esm.js';
 
 export class AlbumPage extends BasePage {
-  constructor(settings = {}) {
+  progressBarContainer: HTMLDivElement | null;
+  _trackedAudios: Set<HTMLAudioElement>;
+  _bpmCache: Record<string, number>;
+  constructor(settings: Partial<Settings> = {}) {
     super(settings);
     this.progressBarContainer = null;
     this._trackedAudios = new Set();
     this._bpmCache = {};
   }
 
-  init() {
+  override init() {
     super.init();
 
     this.setupStickyPlayer();
@@ -17,12 +23,12 @@ export class AlbumPage extends BasePage {
     this.setupBpmAnalyzer();
   }
 
-  static isMatch() {
-    return !!document.querySelector('.inline_player');
+  static override isMatch() {
+    return !!document.querySelector<HTMLElement>('.inline_player');
   }
 
   // Enable autoplay only for related tracks as Bandcamp has it's own auto-play on album pages
-  setupAutoPlayNext() {
+  override setupAutoPlayNext() {
     if (this.autoPlayInterval) {
       clearInterval(this.autoPlayInterval);
     }
@@ -31,7 +37,7 @@ export class AlbumPage extends BasePage {
       return;
     }
 
-    this.autoPlayInterval = setInterval(() => {
+    this.autoPlayInterval = window.setInterval(() => {
       const audio = this.getAudioElement();
       const isAudioEnding =
         audio &&
@@ -39,8 +45,8 @@ export class AlbumPage extends BasePage {
         audio.paused === false;
 
       const isPlayingLastTrackFromAlbum =
-        document.querySelector('#track_table tr.current_track') ===
-        document.querySelector('#track_table tr:last-child');
+        document.querySelector<HTMLElement>('#track_table tr.current_track') ===
+        document.querySelector<HTMLElement>('#track_table tr:last-child');
       const isPlayingRelatedTrack = this.getPlayingRelatedTrack();
 
       if (
@@ -52,7 +58,7 @@ export class AlbumPage extends BasePage {
     }, 700);
   }
 
-  applySettingsChanges(changes) {
+  override applySettingsChanges(changes: SettingsChanges) {
     super.applySettingsChanges(changes);
 
     if (changes.stickyPlayer !== undefined) {
@@ -66,32 +72,32 @@ export class AlbumPage extends BasePage {
     }
   }
 
-  togglePlayPause() {
+  override togglePlayPause() {
     const audio = this.getAudioElement();
     if (audio && audio.readyState > 0) {
       audio.paused ? audio.play() : audio.pause();
     } else {
-      document.querySelector('.playbutton, .playpause')?.click();
+      document.querySelector<HTMLElement>('.playbutton, .playpause')?.click();
     }
   }
 
-  nextSong() {
-    const nextButton = document.querySelector('.nextbutton');
+  override nextSong() {
+    const nextButton = document.querySelector<HTMLElement>('.nextbutton');
     const isPlayingLastTrackFromAlbum =
-      document.querySelector('#track_table tr.current_track') ===
-      document.querySelector('#track_table tr:last-child');
+      document.querySelector<HTMLElement>('#track_table tr.current_track') ===
+      document.querySelector<HTMLElement>('#track_table tr:last-child');
     const playingRelatedTrack = this.getPlayingRelatedTrack();
 
     if (playingRelatedTrack) {
-      playingRelatedTrack.parentElement.nextElementSibling
-        .querySelector('.play-button')
-        .click();
+      playingRelatedTrack.parentElement?.nextElementSibling
+        ?.querySelector<HTMLElement>('.play-button')
+        ?.click();
     } else if (isPlayingLastTrackFromAlbum) {
-      const firstRecommendedTrack = document.querySelector(
+      const firstRecommendedTrack = document.querySelector<HTMLElement>(
         '.recommended-album .play-button',
       );
-      firstRecommendedTrack.click();
-      firstRecommendedTrack.scrollIntoView({
+      firstRecommendedTrack?.click();
+      firstRecommendedTrack?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
@@ -102,21 +108,22 @@ export class AlbumPage extends BasePage {
     }
   }
 
-  prevSong() {
-    const prevButton = document.querySelector('.prevbutton');
+  override prevSong() {
+    const prevButton = document.querySelector<HTMLElement>('.prevbutton');
     const playingRelatedTrack = this.getPlayingRelatedTrack();
     const isPlayingFirstTrackFromRecommended =
-      document.querySelector(
+      document.querySelector<HTMLElement>(
         '.recommendations-content .recommended-album .playing',
       )?.parentElement ===
-      document.querySelector(
+      document.querySelector<HTMLElement>(
         '.recommendations-content .recommended-album:first-child',
       );
 
     if (isPlayingFirstTrackFromRecommended) {
       const lastTrackFromAlbum =
-        document.querySelector('#track_table tr:last-child .play_status') ??
-        document.querySelector('.playbutton');
+        document.querySelector<HTMLElement>(
+          '#track_table tr:last-child .play_status',
+        ) ?? document.querySelector<HTMLElement>('.playbutton');
       lastTrackFromAlbum?.click();
       lastTrackFromAlbum?.scrollIntoView({
         behavior: 'smooth',
@@ -124,7 +131,7 @@ export class AlbumPage extends BasePage {
       });
     } else if (playingRelatedTrack) {
       playingRelatedTrack?.parentElement?.previousElementSibling
-        ?.querySelector('.play-button')
+        ?.querySelector<HTMLElement>('.play-button')
         ?.click();
     } else if (prevButton) {
       prevButton.click();
@@ -133,30 +140,36 @@ export class AlbumPage extends BasePage {
     }
   }
 
-  addToWishlist() {
+  override addToWishlist() {
     const playingRelatedTrack = this.getPlayingRelatedTrack();
     if (playingRelatedTrack) {
       const relatedTrackUrl =
-        playingRelatedTrack.parentElement.querySelector('a.album-link').href;
-      window.open(relatedTrackUrl, '_blank');
+        playingRelatedTrack.parentElement?.querySelector<HTMLAnchorElement>(
+          'a.album-link',
+        )?.href;
+      if (relatedTrackUrl) window.open(relatedTrackUrl, '_blank');
     } else {
       document
-        .querySelector('.wishlist #wishlist-msg, .wishlisted #wishlisted-msg')
+        .querySelector<HTMLElement>(
+          '.wishlist #wishlist-msg, .wishlisted #wishlisted-msg',
+        )
         ?.click();
     }
   }
 
-  openCurrentTrack() {
+  override openCurrentTrack() {
     const playingRelatedTrack = this.getPlayingRelatedTrack();
     if (playingRelatedTrack) {
       const url =
-        playingRelatedTrack.parentElement.querySelector('a.album-link').href;
-      window.open(url, '_blank');
+        playingRelatedTrack.parentElement?.querySelector<HTMLAnchorElement>(
+          'a.album-link',
+        )?.href;
+      if (url) window.open(url, '_blank');
     }
   }
 
   setupStickyPlayer() {
-    const player = document.querySelector('.inline_player');
+    const player = document.querySelector<HTMLElement>('.inline_player');
     if (!player) {
       return;
     }
@@ -171,7 +184,9 @@ export class AlbumPage extends BasePage {
     const styleElement = document.getElementById('custom-design-rules-style');
     if (styleElement) {
       try {
-        const designData = JSON.parse(styleElement.getAttribute('data-design'));
+        const designData = JSON.parse(
+          styleElement.getAttribute('data-design') ?? '{}',
+        );
         if (designData.body_color) {
           player.style.backgroundColor = `#${designData.body_color}`;
         }
@@ -182,22 +197,22 @@ export class AlbumPage extends BasePage {
   }
 
   getPlayingRelatedTrack() {
-    return document.querySelector('.recommended-album .playing');
+    return document.querySelector<HTMLElement>('.recommended-album .playing');
   }
 
   getTrackUrls() {
-    const tralbumEl = document.querySelector('[data-tralbum]');
+    const tralbumEl = document.querySelector<HTMLElement>('[data-tralbum]');
     if (!tralbumEl) return {};
 
     try {
-      const tralbum = JSON.parse(tralbumEl.dataset.tralbum);
-      const urls = {};
+      const tralbum = JSON.parse(tralbumEl.dataset.tralbum ?? '{}');
+      const urls: Record<number, string> = {};
       for (const track of tralbum.trackinfo || []) {
         if (!track.file) continue;
-        const url = Object.values(track.file).find((u) =>
-          /https:\/\/\w+\.bcbits\.com/.test(u),
+        const url = Object.values(track.file).find(
+          (u) => typeof u === 'string' && /https:\/\/\w+\.bcbits\.com/.test(u),
         );
-        if (url) urls[track.track_num ?? 1] = url;
+        if (typeof url === 'string') urls[track.track_num ?? 1] = url;
       }
       return urls;
     } catch {
@@ -205,8 +220,8 @@ export class AlbumPage extends BasePage {
     }
   }
 
-  getCurrentTrackNum(trackUrls) {
-    const currentRow = document.querySelector(
+  getCurrentTrackNum(trackUrls: Record<number, string>) {
+    const currentRow = document.querySelector<HTMLElement>(
       '#track_table tr.current_track .track-number-col',
     );
     if (currentRow) return parseInt(currentRow.textContent);
@@ -218,35 +233,36 @@ export class AlbumPage extends BasePage {
 
   setupBpmAnalyzer() {
     if (!this.settings.showBpm) {
-      const bpmEl = document.querySelector('.bpm-display');
+      const bpmEl = document.querySelector<HTMLElement>('.bpm-display');
       if (bpmEl) bpmEl.textContent = '';
       return;
     }
 
     const trackUrls = this.getTrackUrls();
-    let lastTrackNum = null;
+    let lastTrackNum: number | null = null;
 
     const ensureElement = () => {
-      let el = document.querySelector('.bpm-display');
+      let el = document.querySelector<HTMLElement>('.bpm-display');
       if (!el) {
         el = document.createElement('span');
         el.className = 'bpm-display';
         const time =
-          document.querySelector('.inline_player .time') ||
-          document.querySelector('#trackInfoInner .time');
+          document.querySelector<HTMLElement>('.inline_player .time') ||
+          document.querySelector<HTMLElement>('#trackInfoInner .time');
         if (time) time.appendChild(el);
       }
       return el;
     };
 
-    const analyze = async (url) => {
+    const analyze = async (url: string) => {
       if (this._bpmCache[url]) return this._bpmCache[url];
 
-      const { data } = await browser.runtime.sendMessage({
+      const response: FetchResponse = await browser.runtime.sendMessage({
         type: 'fetch',
         url,
       });
-      const arrayBuffer = new Uint8Array(data).buffer;
+      if ('error' in response) throw new Error(response.error);
+      const arrayBuffer = new Uint8Array(response.data).buffer;
 
       const audioContext = new AudioContext();
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
@@ -282,7 +298,7 @@ export class AlbumPage extends BasePage {
 
     update();
 
-    const trackTable = document.querySelector('#track_table');
+    const trackTable = document.querySelector<HTMLElement>('#track_table');
     if (trackTable) {
       new MutationObserver(update).observe(trackTable, {
         attributes: true,
@@ -306,7 +322,7 @@ export class AlbumPage extends BasePage {
       const playingRelated = this.getPlayingRelatedTrack();
       const container = playingRelated
         ? playingRelated.closest('.recommended-album')
-        : document.querySelector('#tralbumArt');
+        : document.querySelector<HTMLElement>('#tralbumArt');
 
       if (!container) return;
 
@@ -322,7 +338,7 @@ export class AlbumPage extends BasePage {
         this.progressBarContainer.innerHTML =
           '<div class="playback-progress-inner"></div>';
 
-        let artChild = container.querySelector('img');
+        let artChild: HTMLElement | null = container.querySelector('img');
         while (artChild && artChild.parentElement !== container) {
           artChild = artChild.parentElement;
         }
@@ -333,9 +349,11 @@ export class AlbumPage extends BasePage {
         }
       }
 
-      this.progressBarContainer.querySelector(
+      const innerBar = this.progressBarContainer.querySelector<HTMLElement>(
         '.playback-progress-inner',
-      ).style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+      );
+      if (innerBar)
+        innerBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
       this.progressBarContainer.style.display = 'block';
     };
 
@@ -344,7 +362,7 @@ export class AlbumPage extends BasePage {
         this.progressBarContainer.style.display = 'none';
     };
 
-    const attach = (audio) => {
+    const attach = (audio: HTMLAudioElement) => {
       if (this._trackedAudios.has(audio)) return;
       this._trackedAudios.add(audio);
       audio.addEventListener('timeupdate', update);

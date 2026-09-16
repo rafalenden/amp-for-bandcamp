@@ -1,7 +1,16 @@
-import { DEFAULT_SETTINGS } from '../constants.js';
+import { browser } from 'wxt/browser';
+import {
+  DEFAULT_SETTINGS,
+  mergeSettings,
+  type Settings,
+  type SettingsChanges,
+} from '../constants';
 
 export class BasePage {
-  constructor(settings = {}) {
+  settings: Settings;
+  autoPlayInterval: number | null;
+  pageLeaveHandler: ((event: BeforeUnloadEvent) => string | undefined) | null;
+  constructor(settings: Partial<Settings> = {}) {
     this.settings = {
       ...DEFAULT_SETTINGS,
       ...settings,
@@ -39,9 +48,9 @@ export class BasePage {
     document.addEventListener('keydown', (e) => {
       if (
         !this.settings.enableKeyboardShortcuts ||
-        e.target.tagName === 'INPUT' ||
-        e.target.tagName === 'TEXTAREA' ||
-        e.target.tagName === 'MENU-BAR'
+        (e.target as HTMLElement | null)?.tagName === 'INPUT' ||
+        (e.target as HTMLElement | null)?.tagName === 'TEXTAREA' ||
+        (e.target as HTMLElement | null)?.tagName === 'MENU-BAR'
       ) {
         return;
       }
@@ -119,9 +128,7 @@ export class BasePage {
     try {
       browser.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'sync') {
-          for (let key in changes) {
-            this.settings[key] = changes[key].newValue;
-          }
+          this.settings = mergeSettings(this.settings, changes);
           this.applySettingsChanges(changes);
         }
       });
@@ -133,7 +140,7 @@ export class BasePage {
     }
   }
 
-  applySettingsChanges(changes) {
+  applySettingsChanges(changes: SettingsChanges) {
     if (changes.autoPlayNext !== undefined) {
       this.setupAutoPlayNext();
     }
@@ -154,7 +161,7 @@ export class BasePage {
       return;
     }
 
-    this.autoPlayInterval = setInterval(() => {
+    this.autoPlayInterval = window.setInterval(() => {
       const audio = this.getAudioElement();
       if (audio && audio.duration - audio.currentTime <= 1) {
         this.nextSong();

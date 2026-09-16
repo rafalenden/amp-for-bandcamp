@@ -1,19 +1,20 @@
-import { BasePage } from './BasePage.js';
+import type { Settings } from '../constants';
+import { BasePage } from './BasePage';
 
 export class DiscoverPage extends BasePage {
-  constructor(settings = {}) {
+  constructor(settings: Partial<Settings> = {}) {
     super(settings);
   }
 
-  init() {
+  override init() {
     super.init();
   }
 
-  static isMatch() {
-    return !!document.querySelector('#DiscoverApp');
+  static override isMatch() {
+    return !!document.querySelector<HTMLElement>('#DiscoverApp');
   }
 
-  setupAutoPlayNext() {
+  override setupAutoPlayNext() {
     if (this.autoPlayInterval) {
       clearInterval(this.autoPlayInterval);
     }
@@ -22,7 +23,7 @@ export class DiscoverPage extends BasePage {
       return;
     }
 
-    this.autoPlayInterval = setInterval(() => {
+    this.autoPlayInterval = window.setInterval(() => {
       const totalSeconds = this._getPlaybackTotalSeconds();
       const currentSeconds = this._getPlaybackCurrentSeconds();
       if (!totalSeconds || !currentSeconds) return;
@@ -33,16 +34,20 @@ export class DiscoverPage extends BasePage {
     }, 700);
   }
 
-  togglePlayPause() {
-    document.querySelector('.focused-result .play-pause-button')?.click();
+  override togglePlayPause() {
+    document
+      .querySelector<HTMLElement>('.focused-result .play-pause-button')
+      ?.click();
   }
 
-  nextSong() {
+  override nextSong() {
     const currentTrack = document
-      .querySelector('.pause-circle-outline-icon')
-      .closest('.results-grid-item');
+      .querySelector<HTMLElement>('.pause-circle-outline-icon')
+      ?.closest('.results-grid-item');
     const nextTrack =
-      currentTrack?.nextElementSibling?.querySelector('.play-pause-button');
+      currentTrack?.nextElementSibling?.querySelector<HTMLElement>(
+        '.play-pause-button',
+      );
     if (nextTrack) {
       nextTrack.click();
       nextTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -51,12 +56,14 @@ export class DiscoverPage extends BasePage {
     }
   }
 
-  prevSong() {
+  override prevSong() {
     const currentTrack = document
-      .querySelector('.pause-circle-outline-icon')
-      .closest('.results-grid-item');
+      .querySelector<HTMLElement>('.pause-circle-outline-icon')
+      ?.closest('.results-grid-item');
     const prevTrack =
-      currentTrack?.previousElementSibling?.querySelector('.play-pause-button');
+      currentTrack?.previousElementSibling?.querySelector<HTMLElement>(
+        '.play-pause-button',
+      );
     if (prevTrack) {
       prevTrack.click();
       prevTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -65,13 +72,13 @@ export class DiscoverPage extends BasePage {
     }
   }
 
-  openCurrentTrack() {
+  override openCurrentTrack() {
     const currentTrack = document
-      .querySelector('.pause-circle-outline-icon')
+      .querySelector<HTMLElement>('.pause-circle-outline-icon')
       ?.closest('.results-grid-item');
     if (!currentTrack) return;
 
-    const link = currentTrack.querySelector(
+    const link = currentTrack.querySelector<HTMLAnchorElement>(
       'a[href*="/album/"], a[href*="/track/"]',
     );
     if (link) {
@@ -79,18 +86,18 @@ export class DiscoverPage extends BasePage {
     }
   }
 
-  addToWishlist() {
-    document.querySelector('.wishlist-button')?.click();
+  override addToWishlist() {
+    document.querySelector<HTMLElement>('.wishlist-button')?.click();
   }
 
-  _seekToPosition(position) {
-    const slider = document.querySelector('.seek-control');
+  _seekToPosition(position: number) {
+    const slider = document.querySelector<HTMLInputElement>('.seek-control');
     if (!slider) return;
 
     const rect = slider.getBoundingClientRect();
     const clickX = rect.left + rect.width * position;
 
-    slider.value = position;
+    slider.value = String(position);
     slider.dispatchEvent(new Event('input', { bubbles: true }));
     slider.dispatchEvent(new Event('change', { bubbles: true }));
 
@@ -109,31 +116,39 @@ export class DiscoverPage extends BasePage {
   }
 
   _getPlaybackTotalSeconds() {
-    const totalTimeSpan = document.querySelector('.playback-time.total');
+    const totalTimeSpan = document.querySelector<HTMLElement>(
+      '.playback-time.total',
+    );
     if (!totalTimeSpan) {
       return;
     }
-    const [minutes, seconds] = totalTimeSpan.textContent.split(':').map(Number);
+    const [minutes = 0, seconds = 0] = totalTimeSpan.textContent
+      .split(':')
+      .map(Number);
     return minutes * 60 + seconds;
   }
 
   _getPlaybackCurrentSeconds() {
-    const currentTimeSpan = document.querySelector('.playback-time.current');
+    const currentTimeSpan = document.querySelector<HTMLElement>(
+      '.playback-time.current',
+    );
     if (!currentTimeSpan) {
       return;
     }
-    const [minutes, seconds] = currentTimeSpan.textContent.split(':').map(Number);
+    const [minutes = 0, seconds = 0] = currentTimeSpan.textContent
+      .split(':')
+      .map(Number);
     return minutes * 60 + seconds;
   }
 
-  fastForward() {
-    const slider = document.querySelector('.seek-control');
+  override fastForward() {
+    const slider = document.querySelector<HTMLInputElement>('.seek-control');
     const playbackTotalSeconds = this._getPlaybackTotalSeconds();
     if (!slider || !playbackTotalSeconds) {
       return;
     }
 
-    const currentSeconds = slider.value * playbackTotalSeconds;
+    const currentSeconds = Number(slider.value) * playbackTotalSeconds;
     const seekTime = this.settings.seekSeconds;
     const newSeconds = Math.min(
       currentSeconds + seekTime,
@@ -144,14 +159,14 @@ export class DiscoverPage extends BasePage {
     this._seekToPosition(newPosition);
   }
 
-  rewind() {
-    const slider = document.querySelector('.seek-control');
+  override rewind() {
+    const slider = document.querySelector<HTMLInputElement>('.seek-control');
     const playbackTotalSeconds = this._getPlaybackTotalSeconds();
     if (!slider || !playbackTotalSeconds) {
       return;
     }
 
-    const currentSeconds = slider.value * playbackTotalSeconds;
+    const currentSeconds = Number(slider.value) * playbackTotalSeconds;
     const seekTime = this.settings.seekSeconds;
     const newSeconds = Math.max(0, currentSeconds - seekTime);
     const newPosition = newSeconds / playbackTotalSeconds;

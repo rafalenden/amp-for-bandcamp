@@ -31,16 +31,8 @@
 		B804B6152DA08E4B000B4088 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B804B5D32DA08E4B000B4088 /* SafariWebExtensionHandler.swift */; };
 		B804B62F2DA08E4B000B4088 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = B804B6272DA08E4B000B4088 /* LICENSE */; };
 		B804B6312DA08E4B000B4088 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = B804B6292DA08E4B000B4088 /* README.md */; };
-		B804B6322DA08E4B000B4088 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B804B62A2DA08E4B000B4088 /* icons */; };
-		B804B6332DA08E4B000B4088 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B804B62B2DA08E4B000B4088 /* manifest.json */; };
-		B804B6352DA08E4B000B4088 /* vendor in Resources */ = {isa = PBXBuildFile; fileRef = B804B62D2DA08E4B000B4088 /* vendor */; };
-		B804B6362DA08E4B000B4088 /* src in Resources */ = {isa = PBXBuildFile; fileRef = B804B62E2DA08E4B000B4088 /* src */; };
 		B804B6372DA08E4B000B4088 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = B804B6272DA08E4B000B4088 /* LICENSE */; };
 		B804B6392DA08E4B000B4088 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = B804B6292DA08E4B000B4088 /* README.md */; };
-		B804B63A2DA08E4B000B4088 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B804B62A2DA08E4B000B4088 /* icons */; };
-		B804B63B2DA08E4B000B4088 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B804B62B2DA08E4B000B4088 /* manifest.json */; };
-		B804B63D2DA08E4B000B4088 /* vendor in Resources */ = {isa = PBXBuildFile; fileRef = B804B62D2DA08E4B000B4088 /* vendor */; };
-		B804B63E2DA08E4B000B4088 /* src in Resources */ = {isa = PBXBuildFile; fileRef = B804B62E2DA08E4B000B4088 /* src */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,10 +103,6 @@
 		B804B6072DA08E4B000B4088 /* Amp for Bandcamp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Amp for Bandcamp.entitlements"; sourceTree = "<group>"; };
 		B804B6272DA08E4B000B4088 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../../LICENSE; sourceTree = "<group>"; };
 		B804B6292DA08E4B000B4088 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../README.md; sourceTree = "<group>"; };
-		B804B62A2DA08E4B000B4088 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = ../../icons; sourceTree = "<group>"; };
-		B804B62B2DA08E4B000B4088 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../manifest.json; sourceTree = "<group>"; };
-		B804B62D2DA08E4B000B4088 /* vendor */ = {isa = PBXFileReference; lastKnownFileType = folder; name = vendor; path = ../../vendor; sourceTree = "<group>"; };
-		B804B62E2DA08E4B000B4088 /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../src; sourceTree = "<group>"; };
 		B804B63F2DA09000000B4088 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Base.xcconfig; path = xcconfig/Base.xcconfig; sourceTree = "<group>"; };
 		B804B6402DA09000000B4088 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = xcconfig/Debug.xcconfig; sourceTree = "<group>"; };
 		B804B6412DA09000000B4088 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = xcconfig/Release.xcconfig; sourceTree = "<group>"; };
@@ -264,10 +252,6 @@
 			children = (
 				B804B6272DA08E4B000B4088 /* LICENSE */,
 				B804B6292DA08E4B000B4088 /* README.md */,
-				B804B62A2DA08E4B000B4088 /* icons */,
-				B804B62B2DA08E4B000B4088 /* manifest.json */,
-				B804B62D2DA08E4B000B4088 /* vendor */,
-				B804B62E2DA08E4B000B4088 /* src */,
 			);
 			name = Resources;
 			path = "Shared (Extension)";
@@ -347,6 +331,7 @@
 				B804B5F32DA08E4B000B4088 /* Sources */,
 				B804B5F42DA08E4B000B4088 /* Frameworks */,
 				B804B5F52DA08E4B000B4088 /* Resources */,
+				B804B7002DA08E4B000B4088 /* Copy WXT extension */,
 			);
 			buildRules = (
 			);
@@ -366,6 +351,7 @@
 				B804B5FD2DA08E4B000B4088 /* Sources */,
 				B804B5FE2DA08E4B000B4088 /* Frameworks */,
 				B804B5FF2DA08E4B000B4088 /* Resources */,
+				B804B7012DA08E4B000B4088 /* Copy WXT extension */,
 			);
 			buildRules = (
 			);
@@ -457,10 +443,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B804B6392DA08E4B000B4088 /* README.md in Resources */,
-				B804B63D2DA08E4B000B4088 /* vendor in Resources */,
-				B804B63A2DA08E4B000B4088 /* icons in Resources */,
-				B804B63E2DA08E4B000B4088 /* src in Resources */,
-				B804B63B2DA08E4B000B4088 /* manifest.json in Resources */,
 				B804B6372DA08E4B000B4088 /* LICENSE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -470,15 +452,54 @@
 			buildActionMask = 2147483647;
 			files = (
 				B804B6312DA08E4B000B4088 /* README.md in Resources */,
-				B804B6352DA08E4B000B4088 /* vendor in Resources */,
-				B804B6322DA08E4B000B4088 /* icons in Resources */,
-				B804B6362DA08E4B000B4088 /* src in Resources */,
-				B804B6332DA08E4B000B4088 /* manifest.json in Resources */,
 				B804B62F2DA08E4B000B4088 /* LICENSE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B804B7002DA08E4B000B4088 /* Copy WXT extension */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/../.output/safari-mv3",);
+			name = "Copy WXT extension";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/manifest.json",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/background.js",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/popup.html",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/assets",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/chunks",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/content-scripts",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/icons",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nWXT_OUTPUT=\"${SRCROOT}/../.output/safari-mv3\"\nif [ ! -f \"$WXT_OUTPUT/manifest.json\" ]; then\n  echo \"error: Run npm run build:safari:web from the repository root before building in Xcode.\"\n  exit 1\nfi\n/usr/bin/ditto \"$WXT_OUTPUT\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n";
+		};
+		B804B7012DA08E4B000B4088 /* Copy WXT extension */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/../.output/safari-mv3",);
+			name = "Copy WXT extension";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/manifest.json",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/background.js",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/popup.html",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/assets",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/chunks",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/content-scripts",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/icons",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nWXT_OUTPUT=\"${SRCROOT}/../.output/safari-mv3\"\nif [ ! -f \"$WXT_OUTPUT/manifest.json\" ]; then\n  echo \"error: Run npm run build:safari:web from the repository root before building in Xcode.\"\n  exit 1\nfi\n/usr/bin/ditto \"$WXT_OUTPUT\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B804B5D42DA08E4B000B4088 /* Sources */ = {

@@ -31,3 +31,7 @@ yarn-error.log
 
 # Playwright
 .playwright/
+
+# WXT
+.output/
+.wxt/

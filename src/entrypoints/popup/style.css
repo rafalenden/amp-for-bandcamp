@@ -1,7 +1,9 @@
 /* See https://github.com/WebKit/WebKit/blob/main/Source/WebCore/css/CSSValueKeywords.in */
 
 :root {
-  --system-ui: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --system-ui:
+    system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   color-scheme: light dark;
   --bg-color: transparent;
   --text-color: #000000;
@@ -36,7 +38,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
@@ -49,7 +53,8 @@ h1 {
   font-weight: 600;
 }
 
-h2, legend {
+h2,
+legend {
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 8px;
@@ -74,18 +79,18 @@ fieldset {
   margin: 0;
 }
 
-.settings input[type="checkbox"] {
+.settings input[type='checkbox'] {
   margin: 0;
   width: 15px;
   height: 15px;
 }
 
-.settings input[type="number"] {
+.settings input[type='number'] {
   width: 50px;
   text-align: center;
 }
 
-.settings input[type="range"] {
+.settings input[type='range'] {
   width: 150px;
   flex: 0 0 150px;
 }
@@ -112,7 +117,7 @@ kbd {
   border-radius: 3px;
   background: var(--kbd-bg);
   border: 1px solid var(--kbd-border);
-  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
   font-family: var(--system-ui);
   font-size: 13px;
   min-width: 40px;
