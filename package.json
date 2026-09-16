@@ -48,7 +48,8 @@
   },
   "dependencies": {
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "web-audio-beat-detector": "^8.2.39"
   },
   "engines": {
     "node": ">=22.12.0"

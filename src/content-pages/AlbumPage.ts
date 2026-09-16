@@ -2,7 +2,7 @@ import { browser } from 'wxt/browser';
 import type { FetchResponse } from '../types/messages';
 import type { Settings, SettingsChanges } from '../constants';
 import { BasePage } from './BasePage';
-import { analyzeFullBuffer } from '../../vendor/realtime-bpm-analyzer.esm.js';
+import { guess } from 'web-audio-beat-detector';
 
 export class AlbumPage extends BasePage {
   progressBarContainer: HTMLDivElement | null;
@@ -266,12 +266,12 @@ export class AlbumPage extends BasePage {
 
       const audioContext = new AudioContext();
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      const candidates = await analyzeFullBuffer(audioBuffer);
+      const { bpm } = await guess(audioBuffer);
       await audioContext.close();
 
-      const bpm = candidates?.[0] ? Math.round(candidates[0].tempo) : null;
-      if (bpm) this._bpmCache[url] = bpm;
-      return bpm;
+      const roundedBpm = bpm ? Math.round(bpm) : null;
+      if (roundedBpm) this._bpmCache[url] = roundedBpm;
+      return roundedBpm;
     };
 
     const update = async () => {
