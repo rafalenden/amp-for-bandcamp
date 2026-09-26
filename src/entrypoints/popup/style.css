@@ -139,7 +139,7 @@ footer {
 }
 
 .settings-slider span {
-  width: 30px;
+  flex: 0 0 36px;
   display: inline-block;
   margin-left: auto;
   text-align: right;
