@@ -1,18 +1,22 @@
-import { browser } from 'wxt/browser';
-import type { FetchResponse } from '../types/messages';
 import type { Settings, SettingsChanges } from '../constants';
 import { BasePage } from './BasePage';
-import { guess } from 'web-audio-beat-detector';
+import { analyzeBpm } from '../bpm/analyze';
 
 export class AlbumPage extends BasePage {
   progressBarContainer: HTMLDivElement | null;
   _trackedAudios: Set<HTMLAudioElement>;
   _bpmCache: Record<string, number>;
+  private bpmObserver?: MutationObserver;
+  private bpmAnalysis?: AbortController;
   constructor(settings: Partial<Settings> = {}) {
     super(settings);
     this.progressBarContainer = null;
     this._trackedAudios = new Set();
     this._bpmCache = {};
+    window.addEventListener('pagehide', () => this.bpmAnalysis?.abort());
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) this.setupBpmAnalyzer();
+    });
   }
 
   override init() {
@@ -232,6 +236,8 @@ export class AlbumPage extends BasePage {
   }
 
   setupBpmAnalyzer() {
+    this.bpmObserver?.disconnect();
+    this.bpmAnalysis?.abort();
     if (!this.settings.showBpm) {
       const bpmEl = document.querySelector<HTMLElement>('.bpm-display');
       if (bpmEl) bpmEl.textContent = '';
@@ -254,45 +260,37 @@ export class AlbumPage extends BasePage {
       return el;
     };
 
-    const analyze = async (url: string) => {
-      if (this._bpmCache[url]) return this._bpmCache[url];
-
-      const response: FetchResponse = await browser.runtime.sendMessage({
-        type: 'fetch',
-        url,
-      });
-      if ('error' in response) throw new Error(response.error);
-      const arrayBuffer = new Uint8Array(response.data).buffer;
-
-      const audioContext = new AudioContext();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      const { bpm } = await guess(audioBuffer);
-      await audioContext.close();
-
-      const roundedBpm = bpm ? Math.round(bpm) : null;
-      if (roundedBpm) this._bpmCache[url] = roundedBpm;
-      return roundedBpm;
-    };
-
     const update = async () => {
       if (!this.settings.showBpm) return;
       const trackNum = this.getCurrentTrackNum(trackUrls);
       if (trackNum === lastTrackNum) return;
       lastTrackNum = trackNum;
-
-      const url = trackUrls[trackNum];
-      if (!url) return;
+      this.bpmAnalysis?.abort();
 
       const bpmEl = ensureElement();
       bpmEl.textContent = '';
 
+      const url = trackUrls[trackNum];
+      if (!url) return;
+
+      const analysis = new AbortController();
+      this.bpmAnalysis = analysis;
+
       try {
-        const bpm = await analyze(url);
-        if (bpm && this.getCurrentTrackNum(trackUrls) === trackNum) {
+        const bpm =
+          this._bpmCache[url] ?? (await analyzeBpm(url, analysis.signal));
+        if (analysis.signal.aborted) return;
+        this._bpmCache[url] = bpm;
+        if (
+          this.settings.showBpm &&
+          this.getCurrentTrackNum(trackUrls) === trackNum
+        ) {
           bpmEl.textContent = ` | ${bpm} BPM`;
         }
       } catch (error) {
-        console.error('[amp-for-bandcamp] BPM analysis error:', error);
+        if (!analysis.signal.aborted) {
+          console.error('[amp-for-bandcamp] BPM analysis error:', error);
+        }
       }
     };
 
@@ -300,7 +298,8 @@ export class AlbumPage extends BasePage {
 
     const trackTable = document.querySelector<HTMLElement>('#track_table');
     if (trackTable) {
-      new MutationObserver(update).observe(trackTable, {
+      this.bpmObserver = new MutationObserver(update);
+      this.bpmObserver.observe(trackTable, {
         attributes: true,
         subtree: true,
       });

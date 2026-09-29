@@ -33,7 +33,7 @@
     "test:debug": "npm run build && playwright test --debug",
     "version": "bash scripts/version",
     "ci": "npm run compile && npm run test:local",
-    "test:local": "npm test -- tests/Popup.spec.ts tests/Content.spec.ts",
+    "test:local": "npm test -- tests/Popup.spec.ts tests/Content.spec.ts tests/Bpm.spec.ts",
     "test:live": "npm test -- tests/AlbumPage.spec.ts tests/CollectionPage.spec.ts"
   },
   "devDependencies": {
@@ -49,7 +49,8 @@
   "dependencies": {
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "web-audio-beat-detector": "^8.2.39"
+    "web-audio-beat-detector-broker": "^5.0.16",
+    "web-audio-beat-detector-worker": "^6.0.14"
   },
   "engines": {
     "node": ">=22.12.0"

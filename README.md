@@ -16,7 +16,7 @@ A multi-browser extension (Chrome, Firefox, Safari) that amplifies Bandcamp func
 - Auto-play the next track when the current one ends
 - Sticky mini-player that remains visible while scrolling on album pages
 - Playback progress bar on feed and album pages
-- BPM detection on album pages
+- Background BPM detection on album pages
 - Warn when leaving the site during playback
 - Keyboard shortcuts (play/pause, seek, next/previous, wishlist, open track)
 
@@ -51,6 +51,8 @@ npm run build:all             # Both ZIPs + native Safari app
 `npm run build` generates `.output/chrome-mv3`, `.output/firefox-mv3`, and `.output/safari-mv3` from the same source code. Browser-specific manifests are generated automatically. All targets use Manifest V3. Extension metadata and permissions live in `wxt.config.ts`; the version comes from `package.json`. Icons live in `public/icons`. Entrypoints are in `src/entrypoints`, with shared playback controllers in `src/content-pages`.
 
 The Safari Xcode targets copy the compiled `.output/safari-mv3` contents into their extension resources. Run `npm run build:safari:web` after changing web code and before building directly in Xcode. Both macOS and iOS targets use that output.
+
+BPM analysis downloads audio in the extension background and streams small chunks to a hidden extension page for decoding. Downloads stay in the background because Safari applies CORS restrictions to embedded extension pages. Beat detection runs in a packaged Web Worker, and only the BPM result is sent to the album page. This uses the same implementation for Chrome, Firefox, and Safari without Chrome-only offscreen APIs. Switching tracks or disabling BPM removes the analysis frame and cancels the download; completed results are cached for the album page's lifetime.
 
 ## Installation (from sources)
 
@@ -98,7 +100,7 @@ npx playwright install chromium
 npm test
 
 # Run the local integration tests without depending on Bandcamp
-npm test -- tests/Popup.spec.ts tests/Content.spec.ts
+npm run test:local
 
 # Run tests with interactive UI
 npm run test:ui
@@ -117,6 +119,6 @@ In Xcode Cloud, configure the Safari project's workflow with a branch-change sta
 
 ## GitHub Actions CI
 
-`npm run ci` checks TypeScript, builds all three browser bundles, and runs the local popup and playback integration tests. The GitHub Actions workflow installs npm dependencies and Playwright Chromium before running this command.
+`npm run ci` checks TypeScript, builds all three browser bundles, and runs the local popup, playback, and BPM integration tests. BPM tests use synthetic audio to check detection, responsiveness, cancellation, caching, and error cleanup. The GitHub Actions workflow installs npm dependencies and Playwright Chromium before running this command.
 
 `npm run test:live` runs the separate smoke tests against the real Bandcamp album and collection pages. `npm test` runs all tests. These tests dismiss Bandcamp’s cookie dialog before checking playback and require access to the live site; offline CI runs the local integration tests.

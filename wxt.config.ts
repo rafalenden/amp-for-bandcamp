@@ -31,6 +31,12 @@ export default defineConfig({
     action: { default_icon: icons },
     permissions: ['storage'],
     host_permissions: ['*://*.bcbits.com/*', '*://*.bandcamp.com/*'],
+    web_accessible_resources: [
+      {
+        resources: ['bpm-analyzer.html'],
+        matches: ['*://*.bandcamp.com/*'],
+      },
+    ],
     ...(browser === 'firefox'
       ? {
           browser_specific_settings: {
