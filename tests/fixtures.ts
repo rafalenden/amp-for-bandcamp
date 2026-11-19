@@ -15,6 +15,8 @@ export const test = base.extend<{ extensionId: string }>({
     const branded = channel !== 'chromium';
     const context = await chromium.launchPersistentContext('', {
       channel,
+      // A copy of Chromium that stays out of the macOS Dock (see global-setup.ts).
+      executablePath: branded ? undefined : process.env.HIDDEN_CHROMIUM_PATH,
       ...(branded
         ? {
             ignoreDefaultArgs: ['--disable-extensions'],
