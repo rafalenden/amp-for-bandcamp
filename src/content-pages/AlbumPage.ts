@@ -7,6 +7,7 @@ export class AlbumPage extends BasePage {
   _trackedAudios: Set<HTMLAudioElement>;
   _bpmCache: Record<string, number>;
   private bpmObserver?: MutationObserver;
+  private progressObserver?: MutationObserver;
   private bpmAnalysis?: AbortController;
   constructor(settings: Partial<Settings> = {}) {
     super(settings);
@@ -315,6 +316,10 @@ export class AlbumPage extends BasePage {
     }
 
     const update = () => {
+      if (!this.settings.showProgressBar) {
+        hide();
+        return;
+      }
       const audio = this.getAudioElement();
       if (!audio || audio.paused || !audio.duration) return;
 
@@ -371,8 +376,14 @@ export class AlbumPage extends BasePage {
     };
 
     document.querySelectorAll('audio').forEach(attach);
-    new MutationObserver(() =>
+    update();
+    if (this.progressObserver) return;
+    this.progressObserver = new MutationObserver(() =>
       document.querySelectorAll('audio').forEach(attach),
-    ).observe(document.body, { childList: true, subtree: true });
+    );
+    this.progressObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
   }
 }

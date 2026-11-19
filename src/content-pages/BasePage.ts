@@ -37,6 +37,11 @@ export class BasePage {
     return playing || audios[0] || null;
   }
 
+  isPlaying() {
+    const audio = this.getAudioElement();
+    return !!audio && !audio.paused;
+  }
+
   applyVolumeOverride() {
     const audio = this.getAudioElement();
     if (audio && this.settings.volume !== undefined) {
@@ -176,8 +181,7 @@ export class BasePage {
 
     if (this.settings.showLeaveWarning) {
       this.pageLeaveHandler = (e) => {
-        const audio = this.getAudioElement();
-        if (audio && !audio.paused) {
+        if (this.isPlaying()) {
           const message =
             'Music is still playing. Are you sure you want to leave?';
           e.returnValue = message;

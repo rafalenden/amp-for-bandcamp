@@ -31,3 +31,24 @@ export function mergeSettings(
   }
   return next;
 }
+
+/**
+ * Protocol between content scripts and the page-world audio hook
+ * (`entrypoints/audio-hook.ts`). Both sides share the DOM but not JS objects,
+ * so state travels through `<html>` data attributes and `window.postMessage`.
+ */
+export const AUDIO_HOOK = {
+  /** `postMessage` payload marker. */
+  source: 'amp-for-bandcamp',
+  /** Set on `<html>` by the hook once it holds the page's audio element. */
+  readyAttr: 'ampAudioHook',
+  /** Set on `<html>` by the content script: desired volume, 0–100. */
+  volumeAttr: 'ampVolume',
+} as const;
+
+export type AudioHookMessage = {
+  source: typeof AUDIO_HOOK.source;
+  type: 'seek';
+  /** Seconds relative to the current position. */
+  delta: number;
+};

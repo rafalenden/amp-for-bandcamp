@@ -86,7 +86,7 @@ After finishing the "build" step from the above, you can now proceed to the inst
 
 ## Testing
 
-The extension uses [Playwright](https://playwright.dev/) for end-to-end testing. Tests load the compiled extension from `.output/chrome-mv3`. They cover React popup persistence, live settings updates, and playback controls on a local page fixture. The album and collection smoke tests also visit real Bandcamp pages and require network access.
+The extension uses [Playwright](https://playwright.dev/) for end-to-end testing. Tests load the compiled extension from `.output/chrome-mv3`. The local tests serve small HTML fixtures that mimic Bandcamp's album, feed, collection, discover and live pages, so they run offline. They cover keyboard shortcuts, seeking, volume, auto-play, progress bars, the sticky player, leave warnings, popup settings, BPM detection and the background audio download. The album, collection and discover smoke tests also visit real Bandcamp pages and require network access.
 
 ### Install Playwright Dependencies
 ```bash
@@ -119,6 +119,6 @@ In Xcode Cloud, configure the Safari project's workflow with a branch-change sta
 
 ## GitHub Actions CI
 
-`npm run ci` checks TypeScript, builds all three browser bundles, and runs the local popup, playback, and BPM integration tests. BPM tests use synthetic audio to check detection, responsiveness, cancellation, caching, and error cleanup. The GitHub Actions workflow installs npm dependencies and Playwright Chromium before running this command.
+`npm run ci` checks TypeScript, builds all three browser bundles, and runs the local integration tests. BPM tests use synthetic audio to check detection, responsiveness, cancellation, caching, and error cleanup. The GitHub Actions workflow installs npm dependencies and Playwright Chromium before running this command.
 
-`npm run test:live` runs the separate smoke tests against the real Bandcamp album and collection pages. `npm test` runs all tests. These tests dismiss Bandcamp’s cookie dialog before checking playback and require access to the live site; offline CI runs the local integration tests.
+`npm run test:live` runs the separate smoke tests against the real Bandcamp album, collection and discover pages. `npm test` runs all tests. These tests dismiss Bandcamp’s cookie dialog before checking playback and require access to the live site; offline CI runs the local integration tests.
