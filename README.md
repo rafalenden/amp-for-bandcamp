@@ -125,6 +125,25 @@ npm run test:ui
 npm run test:debug
 ```
 
+### Testing in Safari
+
+`npm run test:safari` loads the Safari build into Safari itself through `safaridriver` and checks that the content script runs, that Space toggles playback and that a volume change in the popup reaches the page. GitHub Actions runs it in its own job. It is a single script, [`tests/safari/smoke.mjs`](tests/safari/smoke.mjs), because Playwright cannot drive Safari.
+
+To run it on your Mac you need Safari 26 or later with "Allow remote automation" turned on (Safari Settings, Developer). Safari opens a window while the test runs. If the session times out while connecting to Safari, quit Safari and run the test again. The test page is served locally as `amp-test.bandcamp.com`, which needs a line in `/etc/hosts`:
+
+```bash
+echo '127.0.0.1 amp-test.bandcamp.com' | sudo tee -a /etc/hosts
+```
+
+`SAFARI_LIVE=1 npm run test:safari` visits a real Bandcamp album instead and needs no hosts entry.
+
+The test loads a copy of the build with a few lines added to the background script, because of two limits of an automated Safari window:
+
+- Safari gives an extension no access to a site until the user allows it. In an automated window Safari only offers that access once the background script asks about the tab, so the copy asks. Safari may then show its access prompt, which stops the test until it is answered. On GitHub Actions the test presses "Always Allow" itself (`SAFARI_ANSWER_PROMPT=1`, which needs the Accessibility permission the runners have); on your Mac, press it yourself if it appears.
+- Safari refuses to open the popup's `safari-web-extension://` URL directly, so the copy opens the popup in a tab.
+
+The popup as a real toolbar popup is therefore not tested, and a release still needs a look at that in Safari. When the test fails on GitHub Actions, the job keeps a screenshot and `safaridriver`'s log as the `safari-failure` artifact.
+
 ## Safari releases with Xcode Cloud
 
 The executable hook [`safari/ci_scripts/ci_post_clone.sh`](safari/ci_scripts/ci_post_clone.sh) lives alongside `safari/Amp for Bandcamp.xcodeproj`, where [Xcode Cloud discovers custom build scripts](https://developer.apple.com/documentation/xcode/writing-custom-build-scripts).
