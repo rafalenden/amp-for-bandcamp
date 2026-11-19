@@ -1,24 +1,40 @@
-# Amp for Bandcamp - Browser Extension
+# Amp for Bandcamp
 
-A multi-browser extension (Chrome, Firefox, Safari) that amplifies Bandcamp functionality with playback controls and UI improvements.
+A browser extension for Chrome, Firefox and Safari that enhances [Bandcamp.com](https://bandcamp.com) with BPM detection, auto-play, track progress, keyboard shortcuts and more.
 
 <a href="https://apps.apple.com/pl/app/amp-for-bandcamp/id6745343456"><img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" width="160" height="55"></a>
 <a href="https://chromewebstore.google.com/detail/amp-for-bandcamp/gjmlgkbcolbleloakpcfhfaodldlheld"><img src="https://developer.chrome.com/static/docs/webstore/branding/image/206x58-chrome-web-bcb82d15b2486.png" alt="Available in the Chrome Web Store" width="206" height="55"></a>
 <a href="https://addons.mozilla.org/en-US/firefox/addon/amp-for-bandcamp/"><img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-On for Firefox" width="165" height="55"></a>
 
-> **Disclaimer**: This extension is not affiliated with, endorsed by, or connected to Bandcamp. It is an independent project designed to enhance the user experience on Bandcamp.
+![Amp for Bandcamp: BPM detection, auto-play next track, track progress, and keyboard shortcuts](docs/screenshot.webp)
 
+> **Disclaimer**: This extension is not affiliated with, endorsed by, or connected to Bandcamp. It is an independent project designed to enhance the user experience on Bandcamp.
 
 ## Features
 
-- Volume control slider with a mute toggle (the toolbar icon shows when sound is off)
-- Configurable seek duration
-- Auto-play the next track when the current one ends
-- Sticky mini-player that remains visible while scrolling on album pages
-- Playback progress bar on feed and album pages
-- Background BPM detection on album pages
-- Warn when leaving the site during playback
-- Keyboard shortcuts (play/pause, seek, next/previous, wishlist, open track)
+- **BPM detection** – shows the tempo of the playing track next to its time on album pages, analysed in the background
+- **Auto-play next track** – keeps the music going when a track ends, on the feed and collection pages and for related tracks on album pages
+- **Track progress** – adds a progress bar to tracks playing in the feed and to related tracks on album pages
+- **Keyboard shortcuts** – control playback without reaching for the mouse (see [below](#keyboard-shortcuts))
+- **Volume and mute** – one volume slider and mute toggle for every page, kept in sync with Bandcamp's own sliders; the toolbar icon shows when sound is off
+- **Sticky player** – pins the player to the top of album pages while you scroll
+- **Leave warning** – asks before you navigate away from the site during playback
+
+Everything is configured from the extension popup.
+
+### Keyboard shortcuts
+
+| Key | Action |
+| --- | --- |
+| <kbd>Space</kbd> | Play/pause |
+| <kbd>↑</kbd> | Previous track |
+| <kbd>↓</kbd> | Next track |
+| <kbd>→</kbd> | Seek forward |
+| <kbd>←</kbd> | Seek backward |
+| <kbd>W</kbd> | Add track to wishlist |
+| <kbd>Enter</kbd> | Open track in a new tab |
+
+The seek duration is configurable from 5 to 120 seconds (30 by default). The keyboard's media keys for play/pause and next/previous track work too. Shortcuts are available on album and track pages, the feed, collection, discover, the homepage player and live listening pages.
 
 ## Development and building
 
@@ -86,7 +102,7 @@ After finishing the "build" step from the above, you can now proceed to the inst
 
 ## Testing
 
-The extension uses [Playwright](https://playwright.dev/) for end-to-end testing. Tests load the compiled extension from `.output/chrome-mv3`. The local tests serve small HTML fixtures that mimic Bandcamp's album, feed, collection, discover and live pages, so they run offline. They cover keyboard shortcuts, seeking, volume, auto-play, progress bars, the sticky player, leave warnings, popup settings, BPM detection and the background audio download. The album, collection and discover smoke tests also visit real Bandcamp pages and require network access.
+The extension uses [Playwright](https://playwright.dev/) for end-to-end testing. Tests load the compiled extension from `.output/chrome-mv3`. The local tests serve small HTML fixtures that mimic Bandcamp's album, feed, collection, discover, home and live pages, so they run offline. They cover keyboard shortcuts, seeking, volume, auto-play, progress bars, the sticky player, leave warnings, popup settings, BPM detection and the background audio download. The album, collection, discover and homepage smoke tests also visit real Bandcamp pages and require network access.
 
 ### Install Playwright Dependencies
 ```bash
@@ -121,4 +137,4 @@ In Xcode Cloud, configure the Safari project's workflow with a branch-change sta
 
 `npm run ci` checks TypeScript, builds all three browser bundles, and runs the local integration tests. BPM tests use synthetic audio to check detection, responsiveness, cancellation, caching, and error cleanup. The GitHub Actions workflow installs npm dependencies and Playwright Chromium before running this command.
 
-`npm run test:live` runs the separate smoke tests against the real Bandcamp album, collection and discover pages. `npm test` runs all tests. These tests dismiss Bandcamp’s cookie dialog before checking playback and require access to the live site; offline CI runs the local integration tests.
+`npm run test:live` runs the separate smoke tests against the real Bandcamp album, collection, discover and home pages. `npm test` runs all tests. These tests dismiss Bandcamp’s cookie dialog before checking playback and require access to the live site; offline CI runs the local integration tests.
