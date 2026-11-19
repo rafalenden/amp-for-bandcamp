@@ -35,6 +35,32 @@ const shortcuts = [
   ['enter', 'Open track in a new tab'],
 ];
 
+function SpeakerIcon({ silent }: { silent: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none" />
+      {silent ? (
+        <path d="m23 9-6 6M17 9l6 6" />
+      ) : (
+        <>
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loaded, setLoaded] = useState(false);
@@ -65,13 +91,38 @@ export function App() {
     };
   }, []);
 
-  function update<K extends keyof Settings>(key: K, value: Settings[K]) {
-    setSettings((previous) => ({ ...previous, [key]: value }));
+  // Browsers focus the first control when the popup opens, which leaves a
+  // focus ring on the mute button. Drop that automatic focus, but only until
+  // the user interacts, so Tab and clicks still focus normally.
+  useEffect(() => {
+    const blur = () => {
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
+    };
+    const stop = () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('focusin', blur);
+      document.removeEventListener('keydown', stop, true);
+      document.removeEventListener('pointerdown', stop, true);
+    };
+    const timer = window.setTimeout(stop, 1000);
+    document.addEventListener('focusin', blur);
+    document.addEventListener('keydown', stop, true);
+    document.addEventListener('pointerdown', stop, true);
+    blur();
+    return stop;
+  }, []);
+
+  function update(changes: Partial<Settings>) {
+    setSettings((previous) => ({ ...previous, ...changes }));
     setError(null);
-    browser.storage.sync.set({ [key]: value }).catch(() => {
+    browser.storage.sync.set(changes).catch(() => {
       setError('Could not save settings. Please try again.');
     });
   }
+
+  // While muted the slider reads 0; the chosen volume is kept for unmuting.
+  const effectiveVolume = settings.muted ? 0 : settings.volume;
 
   return (
     <>
@@ -79,18 +130,32 @@ export function App() {
       {error && <p role="alert">{error}</p>}
       <fieldset className="settings" disabled={!loaded}>
         <legend>Settings</legend>
-        <label className="settings-slider">
-          Track volume <span id="volumeValue">{settings.volume}%</span>
+        <div className="settings-slider settings-volume">
+          <label htmlFor="volumeSlider">Track volume</label>
+          <button
+            type="button"
+            id="muteButton"
+            className="mute-button"
+            aria-pressed={settings.muted}
+            aria-label={settings.muted ? 'Unmute' : 'Mute'}
+            title={settings.muted ? 'Unmute' : 'Mute'}
+            onClick={() => update({ muted: !settings.muted })}
+          >
+            <SpeakerIcon silent={effectiveVolume === 0} />
+          </button>
+          <span id="volumeValue">{effectiveVolume}%</span>
           <input
             type="range"
             id="volumeSlider"
             min={0}
             max={100}
             step={1}
-            value={settings.volume}
-            onChange={(event) => update('volume', Number(event.target.value))}
+            value={effectiveVolume}
+            onChange={(event) =>
+              update({ volume: Number(event.target.value), muted: false })
+            }
           />
-        </label>
+        </div>
         {settings.enableKeyboardShortcuts && (
           <label id="seekDurationSection" className="settings-slider">
             Seek duration{' '}
@@ -103,7 +168,7 @@ export function App() {
               step={5}
               value={settings.seekSeconds}
               onChange={(event) =>
-                update('seekSeconds', Number(event.target.value))
+                update({ seekSeconds: Number(event.target.value) })
               }
             />
           </label>
@@ -114,7 +179,7 @@ export function App() {
               type="checkbox"
               id={key}
               checked={settings[key]}
-              onChange={(event) => update(key, event.target.checked)}
+              onChange={(event) => update({ [key]: event.target.checked })}
             />
             {label}
             {key === 'showProgressBar' && (

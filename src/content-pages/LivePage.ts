@@ -20,8 +20,8 @@ export class LivePage extends BasePage {
 
   override applyVolumeOverride() {
     const control = this.getVolumeControl();
-    if (control && this.settings.volume !== undefined) {
-      control.value = String(this.settings.volume);
+    if (control) {
+      control.value = String(this.getEffectiveVolume());
       control.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
@@ -30,6 +30,10 @@ export class LivePage extends BasePage {
     const control = this.getVolumeControl();
     if (control) {
       this.applyVolumeOverride();
+      // Follow the visitor's own changes on the stream's slider.
+      control.addEventListener('change', (event) => {
+        if (event.isTrusted) this.saveVolume(Number(control.value));
+      });
     } else {
       setTimeout(() => this.setupVolumeControl(), 1000);
     }

@@ -12,6 +12,9 @@
   --footer-text-color: #666666;
   --footer-border: rgba(0, 0, 0, 0.1);
   --settings-help-bg-hover: #ddd;
+  --mute-active-color: #c93030;
+  --settings-gap: 6px;
+  --slider-width: 128px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +25,7 @@
     --footer-text-color: #999999;
     --footer-border: rgba(255, 255, 255, 0.15);
     --settings-help-bg-hover: #3d3d3d;
+    --mute-active-color: #ff6b6b;
   }
 }
 
@@ -91,8 +95,52 @@ fieldset {
 }
 
 .settings input[type='range'] {
-  width: 150px;
-  flex: 0 0 150px;
+  width: var(--slider-width);
+  flex: 0 0 var(--slider-width);
+}
+
+/* Same box as a label row, but the mute button sits between the label text
+   and the value, so the slider keeps the width and edges of the other rows. */
+.settings-volume {
+  display: flex;
+  align-items: center;
+  gap: var(--settings-gap);
+  padding: 1px 0;
+  margin-bottom: 8px;
+}
+
+.settings-volume label {
+  padding: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.mute-button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  /* Negative block margin keeps the row as tall as the plain label rows. */
+  margin: -1px 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-color);
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.mute-button:hover {
+  background: var(--settings-help-bg-hover);
+  opacity: 1;
+}
+
+.mute-button[aria-pressed='true'] {
+  color: var(--mute-active-color);
+  opacity: 1;
 }
 
 .shortcuts dl {
