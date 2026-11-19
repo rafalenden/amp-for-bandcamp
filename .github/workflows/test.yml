@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: 22.x
         cache: 'npm'
@@ -28,9 +28,9 @@ jobs:
     runs-on: macos-15
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: 22.x
         cache: 'npm'
@@ -47,7 +47,7 @@ jobs:
     - name: Collect safaridriver's log
       if: failure()
       run: cp -R ~/Library/Logs/com.apple.WebDriver safari-failure/log || true
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       if: failure()
       with:
         name: safari-failure
