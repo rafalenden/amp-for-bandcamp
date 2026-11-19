@@ -33,7 +33,7 @@ export default defineConfig({
     host_permissions: ['*://*.bcbits.com/*', '*://*.bandcamp.com/*'],
     web_accessible_resources: [
       {
-        resources: ['bpm-analyzer.html'],
+        resources: ['bpm-analyzer.html', 'audio-hook.js'],
         matches: ['*://*.bandcamp.com/*'],
       },
     ],
