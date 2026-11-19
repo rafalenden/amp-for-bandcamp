@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -20,3 +21,34 @@ jobs:
     - run: npm ci
     - run: npx playwright install --with-deps chromium
     - run: npm run ci
+
+  # The same build in Safari itself, which Playwright cannot drive.
+  safari:
+    name: Test (safari)
+    runs-on: macos-15
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci
+    - name: Serve the test page as a bandcamp.com host
+      run: echo '127.0.0.1 amp-test.bandcamp.com' | sudo tee -a /etc/hosts
+    - name: Allow Safari to be automated
+      run: sudo safaridriver --enable
+    - run: npm run test:safari
+      env:
+        SAFARI_DIAGNOSE: 1
+        SAFARI_ANSWER_PROMPT: 1
+        SAFARI_SCREENSHOT: safari-failure/screen.png
+    - name: Collect safaridriver's log
+      if: failure()
+      run: cp -R ~/Library/Logs/com.apple.WebDriver safari-failure/log || true
+    - uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: safari-failure
+        path: safari-failure
