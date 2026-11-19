@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import {
   FIXTURE_ORIGIN,
+  expectToCloseWithoutAsking,
   RECORD_CLICKS,
   clicks,
   serveFixture,
@@ -70,12 +71,5 @@ test('always asks before leaving a live stream unless disabled', async ({
 
   await setSettings(context, { showLeaveWarning: false });
   await page.waitForTimeout(300);
-  const dialogs: string[] = [];
-  page.on('dialog', (next) => {
-    dialogs.push(next.type());
-    void next.accept();
-  });
-  await page.close({ runBeforeUnload: true });
-  await expect.poll(() => page.isClosed()).toBe(true);
-  expect(dialogs).toEqual([]);
+  await expectToCloseWithoutAsking(page);
 });

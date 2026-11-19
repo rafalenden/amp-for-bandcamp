@@ -4,7 +4,7 @@ import { serveFixture } from './helpers';
 test('built content script controls playback and responds to popup settings', async ({
   context,
   page,
-  extensionId,
+  extension,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -50,8 +50,7 @@ test('built content script controls playback and responds to popup settings', as
     )
     .toBe(true);
 
-  const popup = await context.newPage();
-  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  const popup = await extension.openPopup();
   await expect(popup.locator('#volumeSlider')).toBeEnabled();
   await popup.getByRole('slider', { name: 'Track volume' }).fill('35');
   await popup
@@ -61,7 +60,7 @@ test('built content script controls playback and responds to popup settings', as
     .poll(() =>
       page.locator('audio').evaluate((audio: HTMLAudioElement) => audio.volume),
     )
-    .toBe(0.35);
+    .toBeCloseTo(0.35);
   await expect(page.locator('.inline_player')).not.toHaveClass(/sticky/);
 
   await page.getByRole('textbox', { name: 'Search' }).focus();

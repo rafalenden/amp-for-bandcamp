@@ -9,7 +9,21 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Test (${{ matrix.browser }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - browser: chromium
+          os: ubuntu-latest
+        - browser: firefox
+          os: ubuntu-latest
+        # On macOS, WebKit plays audio through the same system frameworks as Safari.
+        - browser: webkit
+          os: macos-latest
+    env:
+      TEST_BROWSERS: ${{ matrix.browser }}
 
     steps:
     - uses: actions/checkout@v7
@@ -19,8 +33,21 @@ jobs:
         node-version: 22.x
         cache: 'npm'
     - run: npm ci
-    - run: npx playwright install --with-deps chromium
+    - run: npx playwright install --with-deps ${{ matrix.browser }}
     - run: npm run ci
+
+  # Known vulnerabilities in the packages that ship inside the extension.
+  audit:
+    name: Audit dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22.x
+    - run: npm run test:audit
 
   # The same build in Safari itself, which Playwright cannot drive.
   safari:

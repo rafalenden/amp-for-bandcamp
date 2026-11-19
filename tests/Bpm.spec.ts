@@ -1,32 +1,6 @@
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
-
-function beatWav(bpm: number, seconds = 60) {
-  const rate = 44100;
-  const samples = rate * seconds;
-  const wav = Buffer.alloc(44 + samples * 4);
-  wav.write('RIFF');
-  wav.writeUInt32LE(wav.length - 8, 4);
-  wav.write('WAVEfmt ', 8);
-  wav.writeUInt32LE(16, 16);
-  wav.writeUInt16LE(1, 20);
-  wav.writeUInt16LE(2, 22);
-  wav.writeUInt32LE(rate, 24);
-  wav.writeUInt32LE(rate * 4, 28);
-  wav.writeUInt16LE(4, 32);
-  wav.writeUInt16LE(16, 34);
-  wav.write('data', 36);
-  wav.writeUInt32LE(samples * 4, 40);
-  for (let i = 0; i < samples; i++) {
-    const t = (i / rate) % (60 / bpm);
-    const sample = Math.round(
-      30000 * Math.sin(2 * Math.PI * 80 * t) * Math.exp(-t * 30),
-    );
-    wav.writeInt16LE(sample, 44 + i * 4);
-    wav.writeInt16LE(sample, 46 + i * 4);
-  }
-  return wav;
-}
+import { beatWav } from './helpers';
 
 async function album(context: BrowserContext, page: Page) {
   // Safari rejects cross-origin fetches in embedded extension pages even when
@@ -74,13 +48,13 @@ async function selectTrack(page: Page, number: number) {
 test('detects in a packaged worker without blocking the album, and caches results', async ({
   context,
   page,
+  extension,
 }) => {
   const wav = beatWav(120, 180); // 32 MB, large enough to expose the old JSON audio transfer.
   let requests = 0;
-  await context.route('https://audio.bcbits.com/**', (route) => {
-    expect(route.request().serviceWorker()).not.toBeNull();
+  await extension.routeAudio(() => {
     requests++;
-    return route.fulfill({ contentType: 'audio/wav', body: wav });
+    return { contentType: 'audio/wav', body: wav };
   });
   const workers: string[] = [];
   page.on('worker', (worker) => workers.push(worker.url()));
@@ -117,7 +91,7 @@ test('detects in a packaged worker without blocking the album, and caches result
 test('cancels old tracks and settings changes without restoring stale BPM', async ({
   context,
   page,
-  extensionId,
+  extension,
 }) => {
   const wav = beatWav(150, 15);
   const firstTrack = beatWav(120, 15);
@@ -129,23 +103,19 @@ test('cancels old tracks and settings changes without restoring stale BPM', asyn
   const started = new Promise<void>((resolve) => {
     requested = resolve;
   });
-  await context.route('https://audio.bcbits.com/one.wav', async (route) => {
+  await extension.routeAudio(async (url) => {
+    if (url.endsWith('/two.wav'))
+      return { contentType: 'audio/wav', body: wav };
     requested();
     await held;
-    await route
-      .fulfill({ contentType: 'audio/wav', body: firstTrack })
-      .catch(() => {});
+    return { contentType: 'audio/wav', body: firstTrack };
   });
-  await context.route('https://audio.bcbits.com/two.wav', (route) =>
-    route.fulfill({ contentType: 'audio/wav', body: wav }),
-  );
   await album(context, page);
   await started;
   await selectTrack(page, 2);
   await expect(page.locator('.bpm-display')).toHaveText(' | 150 BPM');
   await selectTrack(page, 1);
-  const popup = await context.newPage();
-  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  const popup = await extension.openPopup();
   const setting = popup.getByRole('checkbox', {
     name: 'Show BPM on album pages',
   });
@@ -164,12 +134,12 @@ test('cancels old tracks and settings changes without restoring stale BPM', asyn
 test('cleans up failed audio analysis and can analyze the next track', async ({
   context,
   page,
+  extension,
 }) => {
-  await context.route('https://audio.bcbits.com/one.wav', (route) =>
-    route.fulfill({ body: 'not audio' }),
-  );
-  await context.route('https://audio.bcbits.com/two.wav', (route) =>
-    route.fulfill({ contentType: 'audio/wav', body: beatWav(120, 15) }),
+  await extension.routeAudio((url) =>
+    url.endsWith('/two.wav')
+      ? { contentType: 'audio/wav', body: beatWav(120, 15) }
+      : { body: 'not audio' },
   );
   const failure = page.waitForEvent('console', (message) =>
     message.text().includes('BPM analysis error'),

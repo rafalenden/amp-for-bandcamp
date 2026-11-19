@@ -102,7 +102,43 @@ After finishing the "build" step from the above, you can now proceed to the inst
 
 ## Testing
 
-The extension uses [Playwright](https://playwright.dev/) for end-to-end testing. Tests load the compiled extension from `.output/chrome-mv3`. The local tests serve small HTML fixtures that mimic Bandcamp's album, feed, collection, discover, home and live pages, so they run offline. They cover keyboard shortcuts, seeking, volume, auto-play, progress bars, the sticky player, leave warnings, popup settings, BPM detection and the background audio download. The album, collection, discover and homepage smoke tests also visit real Bandcamp pages and require network access.
+The extension uses [Playwright](https://playwright.dev/) for end-to-end testing. The local tests serve small HTML fixtures that mimic Bandcamp's album, feed, collection, discover, home and live pages, so they run offline. They cover keyboard shortcuts, seeking, volume, auto-play, progress bars, the sticky player, leave warnings, popup settings, BPM detection and the background audio download. The album, collection, discover and homepage smoke tests also visit real Bandcamp pages and require network access.
+
+### Security and performance
+
+Two files check things the feature tests do not:
+
+- [`tests/Security.spec.ts`](tests/Security.spec.ts) reads each build's manifest and files: the only permissions are storage and the Bandcamp hosts, and no script is remote, inline or built at run time. It then plays a hostile page against the extension: a forged BPM result, a track URL that only mentions `bcbits.com`, another site embedding the BPM analyzer, CSS smuggled into the page's colour data, and seek or volume requests from an embedded frame or out of range. [`tests/Background.spec.ts`](tests/Background.spec.ts) covers which audio URLs the background script will download, and for whom.
+- [`tests/Performance.spec.ts`](tests/Performance.spec.ts) holds each build to size budgets, and checks that a 2,000-track album is set up soon after it is parsed, that a page adding thousands of elements is not slowed much (compared with the same page without a player, so the result does not depend on the machine), that changing settings repeatedly leaves a single auto-play timer, and that the popup opens quickly. [`tests/Bpm.spec.ts`](tests/Bpm.spec.ts) checks that analyzing a 32 MB track never blocks the album page.
+
+Both run with the local tests, in every browser. The budgets are loose on purpose: they catch a jump, not a few percent.
+
+```bash
+npm run test:security
+npm run test:performance
+
+# Known vulnerabilities in the packages that ship in the extension (needs network)
+npm run test:audit
+```
+
+### Browsers
+
+On your machine the tests run in Chromium only. GitHub Actions runs them in Chromium, Firefox and WebKit. To run another browser locally, name it in `TEST_BROWSERS`:
+
+```bash
+npx playwright install firefox webkit
+TEST_BROWSERS=firefox,webkit npm test
+```
+
+Playwright can only load an extension into Chromium, so each browser gets it in its own way (see [`tests/browsers`](tests/browsers)):
+
+| Browser | Build | How the tests load it |
+| --- | --- | --- |
+| Chromium | `.output/chrome-mv3` | As an unpacked extension. |
+| Firefox | `.output/firefox-mv3` | As a temporary add-on, installed over Firefox's remote debugging protocol. Extension pages open in a frame, and a local proxy answers the background script's audio downloads. |
+| WebKit | `.output/safari-mv3` | Not as an extension. The Safari build's content script, popup and background script run in Safari's engine, with a stand-in for the extension APIs they use. |
+
+The WebKit run finds code that Safari's engine runs differently. It cannot find a difference in Safari's own extension APIs.
 
 ### Install Playwright Dependencies
 ```bash
@@ -154,6 +190,6 @@ In Xcode Cloud, configure the Safari project's workflow with a branch-change sta
 
 ## GitHub Actions CI
 
-`npm run ci` checks TypeScript, builds all three browser bundles, and runs the local integration tests. BPM tests use synthetic audio to check detection, responsiveness, cancellation, caching, and error cleanup. The GitHub Actions workflow installs npm dependencies and Playwright Chromium before running this command.
+`npm run ci` checks TypeScript, builds all three browser bundles, and runs the local integration tests. BPM tests use synthetic audio to check detection, responsiveness, cancellation, caching, and error cleanup. The GitHub Actions workflow runs this command in three jobs, one each for Chromium, Firefox and WebKit, after installing npm dependencies and that job's Playwright browser. A separate job runs `npm run test:audit`.
 
 `npm run test:live` runs the separate smoke tests against the real Bandcamp album, collection, discover and home pages. `npm test` runs all tests. These tests dismiss Bandcamp’s cookie dialog before checking playback and require access to the live site; offline CI runs the local integration tests.

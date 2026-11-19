@@ -82,8 +82,8 @@ test('volume settings reach the detached audio', async ({ context, page }) => {
   await setSettings(context, { volume: 35 });
   await serveFixture(context, DISCOVER);
   await openAndPlay(page);
-  await expect.poll(() => player(page, (a) => a.volume)).toBe(0.35);
+  await expect.poll(() => player(page, (a) => a.volume)).toBeCloseTo(0.35);
 
   await setSettings(context, { volume: 80 });
-  await expect.poll(() => player(page, (a) => a.volume)).toBe(0.8);
+  await expect.poll(() => player(page, (a) => a.volume)).toBeCloseTo(0.8);
 });
