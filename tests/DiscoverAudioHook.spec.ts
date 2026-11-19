@@ -11,9 +11,11 @@ import {
 const DISCOVER = `
   <div id="DiscoverApp">
     <div class="floating-player">
-      <button class="play-pause-button" aria-label="Play"></button>
-      <div class="track-progress">
-        <input type="range" min="0" max="90" value="0" style="width: 400px">
+      <div class="player-bar">
+        <button class="play-pause-button" aria-label="Play"></button>
+        <div class="track-progress">
+          <input type="range" min="0" max="90" value="0" style="width: 400px">
+        </div>
       </div>
     </div>
   </div>

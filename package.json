@@ -33,8 +33,8 @@
     "test:debug": "npm run build && playwright test --debug",
     "version": "bash scripts/version",
     "ci": "npm run compile && npm run test:local",
-    "test:local": "npm test -- tests/Popup.spec.ts tests/Content.spec.ts tests/Bpm.spec.ts tests/AlbumControls.spec.ts tests/Background.spec.ts tests/CollectionControls.spec.ts tests/DiscoverControls.spec.ts tests/DiscoverAudioHook.spec.ts tests/FeedPage.spec.ts tests/LivePage.spec.ts tests/Settings.spec.ts tests/Shortcuts.spec.ts",
-    "test:live": "npm test -- tests/AlbumPage.spec.ts tests/CollectionPage.spec.ts tests/DiscoverPage.spec.ts"
+    "test:local": "npm test -- tests/Popup.spec.ts tests/Content.spec.ts tests/Bpm.spec.ts tests/AlbumControls.spec.ts tests/Background.spec.ts tests/CollectionControls.spec.ts tests/DiscoverControls.spec.ts tests/DiscoverAudioHook.spec.ts tests/HomeControls.spec.ts tests/FeedPage.spec.ts tests/LivePage.spec.ts tests/Settings.spec.ts tests/Shortcuts.spec.ts",
+    "test:live": "npm test -- tests/AlbumPage.spec.ts tests/CollectionPage.spec.ts tests/DiscoverPage.spec.ts tests/HomePage.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
