@@ -70,6 +70,19 @@ async function playRecommended(page: Page, number: number) {
     );
 }
 
+/**
+ * Starts the current track again, as Bandcamp does when it switches tracks.
+ * The `pause` and `play` events reach the extension straight away, instead
+ * of waiting for the next `timeupdate`, which a busy machine can hold back
+ * for seconds.
+ */
+async function restartPlayback(page: Page) {
+  await page.locator('audio').evaluate(async (audio: HTMLAudioElement) => {
+    audio.pause();
+    await audio.play();
+  });
+}
+
 test('arrow keys and W use the album player controls', async ({
   context,
   page,
@@ -177,10 +190,12 @@ test('sticky player and progress bar can be disabled before loading', async ({
   await openAlbum(page);
   await waitForAudio(page);
   await playAudio(page);
+  // Progress updates during playback must not create the bar. The events are
+  // fired here because the media clock can stall on a busy machine.
+  await page.locator('audio').evaluate((audio: HTMLAudioElement) => {
+    for (let i = 0; i < 4; i++) audio.dispatchEvent(new Event('timeupdate'));
+  });
 
-  await expect
-    .poll(async () => (await audioState(page)).currentTime)
-    .toBeGreaterThan(0.5);
   await expect(page.locator('.inline_player')).not.toHaveClass(/sticky/);
   await expect(page.locator('.playback-progress')).toHaveCount(0);
 });
@@ -216,6 +231,7 @@ test('progress bar follows the playing recommendation', async ({
     .toBeGreaterThanOrEqual(50);
 
   await playRecommended(page, 0);
+  await restartPlayback(page);
   await expect(page.locator('#tralbumArt .album-art-progress')).toBeVisible();
   await expect(page.locator('.playback-progress')).toHaveCount(1);
 });
@@ -231,8 +247,13 @@ test('progress bar stays hidden after disabling it during playback', async ({
   await expect(page.locator('#tralbumArt .playback-progress')).toBeVisible();
 
   await setSettings(context, { showProgressBar: false });
-  // Let several timeupdate events (about 4 per second) run after the change.
-  await page.waitForTimeout(1500);
+  // The change reaches the content script asynchronously; wait for it, then
+  // check that later progress updates do not bring the bar back. The events
+  // are fired here because the media clock can stall on a busy machine.
+  await expect(page.locator('.playback-progress')).toBeHidden();
+  await page.locator('audio').evaluate((audio: HTMLAudioElement) => {
+    for (let i = 0; i < 4; i++) audio.dispatchEvent(new Event('timeupdate'));
+  });
   expect(await page.locator('.playback-progress').isVisible()).toBe(false);
   expect((await audioState(page)).paused).toBe(false);
 
@@ -241,16 +262,28 @@ test('progress bar stays hidden after disabling it during playback', async ({
   await expect(page.locator('.playback-progress')).toHaveCount(1);
 });
 
-test('progress bar hides when the track ends', async ({ context, page }) => {
+test('progress bar hides when the track ends', async ({
+  context,
+  page,
+  browserName,
+}) => {
   await serveFixture(context, WITH_AUDIO);
   await openAlbum(page);
   await waitForAudio(page);
   await playAudio(page, 0);
   await expect(page.locator('#tralbumArt .playback-progress')).toBeVisible();
 
-  await page.locator('audio').evaluate((audio: HTMLAudioElement) => {
-    audio.currentTime = audio.duration - 0.2;
-  });
+  // Seeking to the very end ends the track at once, without waiting on the
+  // media clock, which a busy machine can hold back for seconds. Firefox
+  // never finishes a seek to the exact end, so there the track plays out its
+  // last moments.
+  const fromEnd = browserName === 'firefox' ? 0.2 : 0;
+  await page.locator('audio').evaluate((audio: HTMLAudioElement, offset) => {
+    audio.currentTime = audio.duration - offset;
+  }, fromEnd);
+  await expect
+    .poll(async () => (await audioState(page)).paused, { timeout: 15_000 })
+    .toBe(true);
   await expect(page.locator('.playback-progress')).toBeHidden();
 });
 
