@@ -1,9 +1,12 @@
 import type { BrowserContext, Page, Route } from '@playwright/test';
+import { readdirSync, readFileSync } from 'fs';
+import path from 'path';
 import type { browser } from 'wxt/browser';
 import type { Settings } from '../src/constants';
-import { expect } from './fixtures';
+import { buildPath } from './browsers/extension';
+import { expect, extensionIn, test } from './fixtures';
 
-/** The `chrome` global inside extension pages and the service worker. */
+/** The `chrome` global inside extension pages. */
 export type ExtensionGlobal = { chrome: typeof browser };
 
 export const FIXTURE_ORIGIN = 'https://amp-test.bandcamp.com';
@@ -24,6 +27,34 @@ export function silentWav(seconds = 90) {
   wav.writeUInt16LE(16, 34);
   wav.write('data', 36);
   wav.writeUInt32LE(samples * 2, 40);
+  return wav;
+}
+
+/** A click track at `bpm`, for the BPM analyzer to detect. */
+export function beatWav(bpm: number, seconds = 60) {
+  const rate = 44100;
+  const samples = rate * seconds;
+  const wav = Buffer.alloc(44 + samples * 4);
+  wav.write('RIFF');
+  wav.writeUInt32LE(wav.length - 8, 4);
+  wav.write('WAVEfmt ', 8);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20);
+  wav.writeUInt16LE(2, 22);
+  wav.writeUInt32LE(rate, 24);
+  wav.writeUInt32LE(rate * 4, 28);
+  wav.writeUInt16LE(4, 32);
+  wav.writeUInt16LE(16, 34);
+  wav.write('data', 36);
+  wav.writeUInt32LE(samples * 4, 40);
+  for (let i = 0; i < samples; i++) {
+    const t = (i / rate) % (60 / bpm);
+    const sample = Math.round(
+      30000 * Math.sin(2 * Math.PI * 80 * t) * Math.exp(-t * 30),
+    );
+    wav.writeInt16LE(sample, 44 + i * 4);
+    wav.writeInt16LE(sample, 46 + i * 4);
+  }
   return wav;
 }
 
@@ -74,25 +105,12 @@ export async function serveFixture(context: BrowserContext, body: string) {
   });
 }
 
-export async function extensionWorker(context: BrowserContext) {
-  return (
-    context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'))
-  );
-}
-
 /** Writes settings to sync storage, as the popup would. */
 export async function setSettings(
   context: BrowserContext,
   settings: Partial<Settings>,
 ) {
-  const worker = await extensionWorker(context);
-  await worker.evaluate(
-    (values) =>
-      (globalThis as unknown as ExtensionGlobal).chrome.storage.sync.set(
-        values,
-      ),
-    settings,
-  );
+  await extensionIn(context).setStorage(settings);
 }
 
 /**
@@ -163,4 +181,41 @@ export async function expectNewTab(
   const [tab] = await Promise.all([context.waitForEvent('page'), action()]);
   await expect(tab).toHaveURL(url);
   await tab.close();
+}
+
+/** Closes the page as a user would, and checks that it went without asking. */
+export async function expectToCloseWithoutAsking(page: Page) {
+  const dialogs: string[] = [];
+  page.on('dialog', (dialog) => {
+    dialogs.push(dialog.type());
+    void dialog.accept();
+  });
+  const closed = new Promise<void>((resolve) =>
+    page.once('close', () => resolve()),
+  );
+  await page.close({ runBeforeUnload: true });
+  // Playwright's WebKit never finishes closing a page that has no
+  // `beforeunload` listener, so there the check is only that nothing asks.
+  if (test.info().project.use.browserName === 'webkit') {
+    await Promise.race([closed, new Promise((done) => setTimeout(done, 500))]);
+  } else {
+    await closed;
+  }
+  expect(dialogs).toEqual([]);
+}
+
+export const BUILDS = ['chrome', 'firefox', 'safari'] as const;
+
+/** Every file `npm run build` made for `browser`, by its path in the build. */
+export function builtFiles(browser: (typeof BUILDS)[number]) {
+  const root = buildPath(browser);
+  return (readdirSync(root, { recursive: true }) as string[])
+    .map((file) => file.split(path.sep).join('/'))
+    .filter((file) => /\.\w+$/.test(file) && !file.endsWith('.DS_Store'))
+    .sort()
+    .map((file) => ({
+      file,
+      read: () => readFileSync(path.join(root, file), 'utf8'),
+      size: readFileSync(path.join(root, file)).length,
+    }));
 }

@@ -1,29 +1,31 @@
-import type { BrowserContext, Page } from '@playwright/test';
-import { test, expect } from './fixtures';
+import type { Page } from '@playwright/test';
+import { test, expect, type ExtensionPage } from './fixtures';
 import {
   FIXTURE_ORIGIN,
   audioState,
-  extensionWorker,
   serveFixture,
   setSettings,
   waitForShortcuts,
+  type ExtensionGlobal,
 } from './helpers';
 
+/** The keyboard of the tab showing an extension page. */
+const keyboardOf = (popup: ExtensionPage) =>
+  ('keyboard' in popup ? popup : popup.page()).keyboard;
+
 test('mute button silences playback and restores the previous volume', async ({
-  page,
-  extensionId,
+  extension,
 }) => {
-  const popupUrl = `chrome-extension://${extensionId}/popup.html`;
-  await page.goto(popupUrl);
-  const slider = page.getByRole('slider', { name: 'Track volume' });
-  const value = page.locator('#volumeValue');
+  const popup = await extension.openPopup();
+  const slider = popup.getByRole('slider', { name: 'Track volume' });
+  const value = popup.locator('#volumeValue');
   await expect(slider).toBeEnabled();
 
   await slider.fill('42');
   await expect(value).toHaveText('42%');
 
-  await page.getByRole('button', { name: 'Mute' }).click();
-  await expect(page.getByRole('button', { name: 'Unmute' })).toHaveAttribute(
+  await popup.getByRole('button', { name: 'Mute' }).click();
+  await expect(popup.getByRole('button', { name: 'Unmute' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -31,8 +33,7 @@ test('mute button silences playback and restores the previous volume', async ({
   await expect(value).toHaveText('0%');
 
   // The muted state and the remembered volume both survive reopening.
-  const reopened = await page.context().newPage();
-  await reopened.goto(popupUrl);
+  const reopened = await extension.openPopup();
   await expect(reopened.locator('#volumeSlider')).toHaveValue('0');
   await reopened.getByRole('button', { name: 'Unmute' }).click();
   await expect(reopened.locator('#volumeSlider')).toHaveValue('42');
@@ -52,33 +53,45 @@ test('mute button silences playback and restores the previous volume', async ({
 });
 
 test('nothing is focused when the popup opens', async ({
-  page,
-  extensionId,
+  extension,
+  browserName,
 }) => {
-  await page.goto(`chrome-extension://${extensionId}/popup.html`);
-  await expect(page.locator('#volumeSlider')).toBeEnabled();
-  const focused = () => page.evaluate(() => document.activeElement?.id ?? '');
+  const popup = await extension.openPopup();
+  const keyboard = keyboardOf(popup);
+  await expect(popup.locator('#volumeSlider')).toBeEnabled();
+  const focused = () => popup.evaluate(() => document.activeElement?.id ?? '');
   // The browser's automatic focus arrives shortly after load.
-  await page.evaluate(() => document.getElementById('muteButton')?.focus());
+  await popup.evaluate(() => document.getElementById('muteButton')?.focus());
   expect(await focused()).toBe('');
 
-  // Once the user presses a key, focus behaves normally. Tab continues from
-  // where the dropped focus was, so it lands on the next control.
-  await page.keyboard.press('Tab');
-  await expect.poll(focused).toBe('volumeSlider');
-  await page.keyboard.press('Shift+Tab');
-  await expect.poll(focused).toBe('muteButton');
+  // Once the user presses a key, focus behaves normally. In Chromium and
+  // Firefox, Tab continues from where the dropped focus was, so it lands on
+  // the next control. WebKit starts again from the top of the popup.
+  await keyboard.press('Tab');
+  if (browserName === 'webkit') {
+    await expect.poll(focused).toBe('muteButton');
+    await keyboard.press('Tab');
+    await expect.poll(focused).toBe('volumeSlider');
+  } else {
+    await expect.poll(focused).toBe('volumeSlider');
+    await keyboard.press('Shift+Tab');
+    await expect.poll(focused).toBe('muteButton');
+  }
 });
 
 test('the toolbar icon shows when sound is off', async ({
   context,
-  page,
-  extensionId,
+  extension,
+  browserName,
 }) => {
-  await page.goto(`chrome-extension://${extensionId}/popup.html`);
-  await expect(page.locator('#volumeSlider')).toBeEnabled();
+  // Only Chromium gives the tests a handle on the background script.
+  test.skip(browserName !== 'chromium', 'Needs the background service worker');
+  const popup = await extension.openPopup();
+  await expect(popup.locator('#volumeSlider')).toBeEnabled();
 
-  const worker = await extensionWorker(context);
+  const worker =
+    context.serviceWorkers()[0] ??
+    (await context.waitForEvent('serviceworker'));
   // There is no API to read the current action icon, so record what the
   // background passes to setIcon.
   await worker.evaluate(() => {
@@ -95,15 +108,15 @@ test('the toolbar icon shows when sound is off', async ({
   const iconPath = () =>
     worker.evaluate(() => (globalThis as any).__lastIcon ?? null);
 
-  await page.getByRole('button', { name: 'Mute' }).click();
+  await popup.getByRole('button', { name: 'Mute' }).click();
   await expect.poll(iconPath).toBe('icons/icon-muted32.png');
-  await page.getByRole('button', { name: 'Unmute' }).click();
+  await popup.getByRole('button', { name: 'Unmute' }).click();
   await expect.poll(iconPath).toBe('icons/icon32.png');
 
   // Dragging the slider to 0 also shows the muted icon without toggling mute.
-  await page.getByRole('slider', { name: 'Track volume' }).fill('0');
+  await popup.getByRole('slider', { name: 'Track volume' }).fill('0');
   await expect.poll(iconPath).toBe('icons/icon-muted32.png');
-  await expect(page.getByRole('button', { name: 'Mute' })).toHaveAttribute(
+  await expect(popup.getByRole('button', { name: 'Mute' })).toHaveAttribute(
     'aria-pressed',
     'false',
   );
@@ -176,12 +189,14 @@ const CAROUSEL_PLAYER = `
     audio.addEventListener('play', () => { audio.volume = volume; });
   </script>`;
 
-const storedVolume = async (context: BrowserContext) => {
-  const worker = await extensionWorker(context);
-  return worker.evaluate(() =>
-    (globalThis as any).chrome.storage.sync.get(['volume', 'muted']),
+/** Reads the saved volume from an open popup, which every browser has. */
+const storedVolume = (popup: ExtensionPage) =>
+  popup.evaluate(() =>
+    (globalThis as unknown as ExtensionGlobal).chrome.storage.sync.get([
+      'volume',
+      'muted',
+    ]),
   );
-};
 
 for (const [name, path, body] of [
   ['feed', '/feed', '<div id="stories"><ul></ul></div>'],
@@ -189,6 +204,7 @@ for (const [name, path, body] of [
 ] as const) {
   test(`the ${name} page's own volume slider follows the extension`, async ({
     context,
+    extension,
     page,
   }) => {
     await setSettings(context, { volume: 35 });
@@ -217,8 +233,9 @@ for (const [name, path, body] of [
 
     // The visitor moving the page's slider updates the extension's volume.
     await page.locator('.vol-slider').click({ position: { x: 49, y: 5 } });
+    const popup = await extension.openPopup();
     await expect
-      .poll(() => storedVolume(context))
+      .poll(() => storedVolume(popup))
       .toEqual({ volume: 80, muted: false });
     await expect.poll(volume).toBe(0.8);
   });
@@ -284,6 +301,7 @@ for (const [name, path, appId] of [
 
 test('mute silences a live stream and restores its volume', async ({
   context,
+  extension,
   page,
 }) => {
   await setSettings(context, { volume: 40 });
@@ -304,7 +322,8 @@ test('mute silences a live stream and restores its volume', async ({
   // The visitor moving the stream's slider updates the extension's volume.
   await slider.focus();
   await page.keyboard.press('End');
+  const popup = await extension.openPopup();
   await expect
-    .poll(() => storedVolume(context))
+    .poll(() => storedVolume(popup))
     .toEqual({ volume: 100, muted: false });
 });

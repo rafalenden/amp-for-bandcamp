@@ -1,8 +1,15 @@
-import { chromium } from '@playwright/test';
+import { chromium, type FullConfig } from '@playwright/test';
 import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, renameSync, rmSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { prepareFirefox } from './browsers/firefox';
+
+export default function globalSetup(config: FullConfig) {
+  const browsers = config.projects.map((project) => project.use.browserName);
+  if (browsers.includes('firefox')) prepareFirefox();
+  if (browsers.includes('chromium')) hideChromiumFromDock();
+}
 
 /**
  * On macOS, Chromium registers as a regular Dock app for a moment on every
@@ -13,7 +20,7 @@ import { fileURLToPath } from 'url';
  * The copy is an APFS clone (no extra disk space) cached per Chromium build.
  * Set SHOW_TEST_BROWSER_IN_DOCK=1 to use Playwright's stock Chromium.
  */
-export default function globalSetup() {
+function hideChromiumFromDock() {
   if (
     process.platform !== 'darwin' ||
     process.env.SHOW_TEST_BROWSER_IN_DOCK ||

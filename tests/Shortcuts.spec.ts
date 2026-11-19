@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import {
   FIXTURE_ORIGIN,
+  expectToCloseWithoutAsking,
   audioState,
   playAudio,
   serveFixture,
@@ -132,7 +133,9 @@ test('volume applies to audio players added later', async ({
     audio.src = '/audio.wav';
     document.body.append(audio);
   });
-  await expect.poll(async () => (await audioState(page)).volume).toBe(0.6);
+  await expect
+    .poll(async () => (await audioState(page)).volume)
+    .toBeCloseTo(0.6);
 });
 
 test.describe('leave warning', () => {
@@ -157,14 +160,7 @@ test.describe('leave warning', () => {
     await page.keyboard.press('Space');
     await expect.poll(() => isPaused(page)).toBe(true);
 
-    const dialogs: string[] = [];
-    page.on('dialog', (dialog) => {
-      dialogs.push(dialog.type());
-      void dialog.accept();
-    });
-    await page.close({ runBeforeUnload: true });
-    await expect.poll(() => page.isClosed()).toBe(true);
-    expect(dialogs).toEqual([]);
+    await expectToCloseWithoutAsking(page);
   });
 
   test('can be disabled', async ({ context, page }) => {
@@ -175,14 +171,7 @@ test.describe('leave warning', () => {
     await setSettings(context, { showLeaveWarning: false });
     await page.waitForTimeout(300);
 
-    const dialogs: string[] = [];
-    page.on('dialog', (dialog) => {
-      dialogs.push(dialog.type());
-      void dialog.accept();
-    });
-    await page.close({ runBeforeUnload: true });
-    await expect.poll(() => page.isClosed()).toBe(true);
-    expect(dialogs).toEqual([]);
+    await expectToCloseWithoutAsking(page);
   });
 });
 

@@ -1,49 +1,25 @@
-import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 import {
   FIXTURE_ORIGIN,
   audioState,
-  extensionWorker,
   serveFixture,
   setSettings,
   waitForAudio,
   waitForShortcuts,
-  type ExtensionGlobal,
 } from './helpers';
 
-/** Writes raw values, bypassing the popup's typed controls. */
-async function writeRaw(context: BrowserContext, values: object) {
-  const worker = await extensionWorker(context);
-  await worker.evaluate(
-    (items) =>
-      (globalThis as unknown as ExtensionGlobal).chrome.storage.sync.set(items),
-    values,
-  );
-}
+test('popup shows the defaults on first run', async ({ extension }) => {
+  const popup = await extension.openPopup();
 
-async function removeSetting(context: BrowserContext, key: string) {
-  const worker = await extensionWorker(context);
-  await worker.evaluate(
-    (name) =>
-      (globalThis as unknown as ExtensionGlobal).chrome.storage.sync.remove(
-        name,
-      ),
-    key,
-  );
-}
-
-test('popup shows the defaults on first run', async ({ page, extensionId }) => {
-  await page.goto(`chrome-extension://${extensionId}/popup.html`);
-
-  await expect(page.locator('#volumeSlider')).toBeEnabled();
-  await expect(page.locator('#volumeValue')).toHaveText('100%');
-  await expect(page.locator('#seekSecondsValue')).toHaveText('30s');
-  const checkboxes = page.getByRole('checkbox');
+  await expect(popup.locator('#volumeSlider')).toBeEnabled();
+  await expect(popup.locator('#volumeValue')).toHaveText('100%');
+  await expect(popup.locator('#seekSecondsValue')).toHaveText('30s');
+  const checkboxes = popup.getByRole('checkbox');
   await expect(checkboxes).toHaveCount(6);
   for (const checkbox of await checkboxes.all()) {
     await expect(checkbox).toBeChecked();
   }
-  await expect(page.locator('#keyboardShortcutsSection dt')).toHaveText([
+  await expect(popup.locator('#keyboardShortcutsSection dt')).toHaveText([
     'space',
     '↑',
     '↓',
@@ -52,35 +28,37 @@ test('popup shows the defaults on first run', async ({ page, extensionId }) => {
     'w',
     'enter',
   ]);
-  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(popup.getByRole('alert')).toHaveCount(0);
 });
 
 test('popup follows outside changes, ignores invalid values and restores defaults', async ({
   context,
   page,
-  extensionId,
+  extension,
 }) => {
-  await page.goto(`chrome-extension://${extensionId}/popup.html`);
-  await expect(page.locator('#volumeSlider')).toBeEnabled();
+  const popup = await extension.openPopup();
+  await expect(popup.locator('#volumeSlider')).toBeEnabled();
 
   await setSettings(context, { volume: 70, enableKeyboardShortcuts: false });
-  await expect(page.locator('#volumeValue')).toHaveText('70%');
-  await expect(page.locator('#keyboardShortcutsSection')).toBeHidden();
+  await expect(popup.locator('#volumeValue')).toHaveText('70%');
+  await expect(popup.locator('#keyboardShortcutsSection')).toBeHidden();
 
-  await writeRaw(context, { volume: 'loud', enableKeyboardShortcuts: 1 });
+  // Raw values, which the popup's typed controls could not write.
+  await extension.setStorage({ volume: 'loud', enableKeyboardShortcuts: 1 });
   await page.waitForTimeout(300);
-  await expect(page.locator('#volumeValue')).toHaveText('70%');
-  await expect(page.locator('#keyboardShortcutsSection')).toBeHidden();
+  await expect(popup.locator('#volumeValue')).toHaveText('70%');
+  await expect(popup.locator('#keyboardShortcutsSection')).toBeHidden();
 
-  await removeSetting(context, 'volume');
-  await removeSetting(context, 'enableKeyboardShortcuts');
-  await expect(page.locator('#volumeValue')).toHaveText('100%');
-  await expect(page.locator('#keyboardShortcutsSection')).toBeVisible();
+  await extension.removeStorage('volume');
+  await extension.removeStorage('enableKeyboardShortcuts');
+  await expect(popup.locator('#volumeValue')).toHaveText('100%');
+  await expect(popup.locator('#keyboardShortcutsSection')).toBeVisible();
 });
 
 test('content script ignores invalid values and restores removed settings', async ({
   context,
   page,
+  extension,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -92,17 +70,17 @@ test('content script ignores invalid values and restores removed settings', asyn
   await page.goto(`${FIXTURE_ORIGIN}/album/test`);
   await waitForShortcuts(page);
   await waitForAudio(page);
-  expect((await audioState(page)).volume).toBe(0.3);
+  expect((await audioState(page)).volume).toBeCloseTo(0.3);
 
-  await writeRaw(context, { volume: 'loud', stickyPlayer: 'no' });
+  await extension.setStorage({ volume: 'loud', stickyPlayer: 'no' });
   await page.waitForTimeout(300);
-  expect((await audioState(page)).volume).toBe(0.3);
+  expect((await audioState(page)).volume).toBeCloseTo(0.3);
   await expect(page.locator('.inline_player')).toHaveClass(/sticky/);
 
   await setSettings(context, { stickyPlayer: false });
   await expect(page.locator('.inline_player')).not.toHaveClass(/sticky/);
-  await removeSetting(context, 'volume');
-  await removeSetting(context, 'stickyPlayer');
+  await extension.removeStorage('volume');
+  await extension.removeStorage('stickyPlayer');
   await expect.poll(async () => (await audioState(page)).volume).toBe(1);
   await expect(page.locator('.inline_player')).toHaveClass(/sticky/);
   expect(errors).toEqual([]);
