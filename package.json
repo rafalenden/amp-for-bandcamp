@@ -53,6 +53,7 @@
   "dependencies": {
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "system-look": "0.2.1",
     "web-audio-beat-detector-broker": "^5.0.16",
     "web-audio-beat-detector-worker": "^6.0.14"
   },

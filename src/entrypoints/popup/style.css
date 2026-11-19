@@ -1,116 +1,60 @@
-/* See https://github.com/WebKit/WebKit/blob/main/Source/WebCore/css/CSSValueKeywords.in */
+/* Base element styles (system font, light/dark colours, form controls, kbd…)
+   come from system-look, imported before this file, using its compact density
+   (set on <html> in index.html). Only what is specific to the popup lives here. */
 
 :root {
-  --system-ui:
-    system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-  color-scheme: light dark;
-  --bg-color: transparent;
-  --text-color: #000000;
-  --kbd-bg: #f5f5f5;
-  --kbd-border: #ddd;
-  --footer-text-color: #666666;
-  --footer-border: rgba(0, 0, 0, 0.1);
-  --settings-help-bg-hover: #ddd;
-  --mute-active-color: #c93030;
-  --settings-gap: 6px;
   --slider-width: 128px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text-color: #e4e4e4;
-    --kbd-bg: #2d2d2d;
-    --kbd-border: #3d3d3d;
-    --footer-text-color: #999999;
-    --footer-border: rgba(255, 255, 255, 0.15);
-    --settings-help-bg-hover: #3d3d3d;
-    --mute-active-color: #ff6b6b;
-  }
-}
-
 body {
-  font-family: var(--system-ui);
-  width: 290px;
-  padding: 15px;
+  width: 320px;
   margin: 0;
-  color: var(--text-color);
-  background-color: var(--bg-color);
-  font-size: 13px;
-  line-height: 1.4;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  transition:
-    background-color 0.3s,
-    color 0.3s;
+  padding: var(--system-spacing-lg);
+  /* Behave like native UI: arrow cursor, labels are not selectable text. */
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
 }
 
 h1 {
-  font-size: 18px;
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-weight: 600;
+  margin-bottom: var(--system-spacing-md);
 }
 
-h2,
-legend {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  padding: 0;
+fieldset:not(:last-child) {
+  margin-bottom: var(--system-spacing-md);
 }
 
-fieldset {
-  border: none;
-  margin: 0 0 15px 0;
-  padding: 0;
-}
-
-.settings label {
+/* One setting per row: control, text, then (for sliders) value and slider. */
+.settings label,
+.settings-volume {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 1px 0;
-  margin-bottom: 8px;
+  gap: var(--system-spacing-sm);
+}
+
+.settings-volume {
+  margin-bottom: var(--system-spacing-sm);
 }
 
 .settings input {
+  flex: 0 0 auto;
   margin: 0;
-}
-
-.settings input[type='checkbox'] {
-  margin: 0;
-  width: 15px;
-  height: 15px;
-}
-
-.settings input[type='number'] {
-  width: 50px;
-  text-align: center;
 }
 
 .settings input[type='range'] {
   width: var(--slider-width);
-  flex: 0 0 var(--slider-width);
+}
+
+.settings-slider span {
+  flex: 0 0 36px;
+  margin-left: auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Same box as a label row, but the mute button sits between the label text
    and the value, so the slider keeps the width and edges of the other rows. */
-.settings-volume {
-  display: flex;
-  align-items: center;
-  gap: var(--settings-gap);
-  padding: 1px 0;
-  margin-bottom: 8px;
-}
-
 .settings-volume label {
-  padding: 0;
   margin: 0;
   white-space: nowrap;
 }
@@ -122,85 +66,60 @@ fieldset {
   justify-content: center;
   width: 20px;
   height: 20px;
+  min-height: 0;
   padding: 0;
   /* Negative block margin keeps the row as tall as the plain label rows. */
   margin: -1px 0;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--system-spacing-xs);
   background: transparent;
-  color: var(--text-color);
+  color: inherit;
   opacity: 0.75;
-  cursor: pointer;
 }
 
 .mute-button:hover {
-  background: var(--settings-help-bg-hover);
+  background: var(--system-fill-color-hover);
   opacity: 1;
 }
 
 .mute-button[aria-pressed='true'] {
-  color: var(--mute-active-color);
+  color: var(--system-danger-color);
   opacity: 1;
 }
 
-.shortcuts dl {
-  margin: 0;
-  display: grid;
-  grid-template-columns: 60px 1fr;
-  gap: 8px;
+.settings-help {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-family: var(--system-ui-mono);
+  font-size: 10px;
+  line-height: 1;
 }
 
-.shortcuts dt {
+.settings-help:hover {
+  background: var(--system-fill-color-hover);
+}
+
+.shortcuts dl {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: var(--system-spacing-sm);
+  align-items: center;
   margin: 0;
 }
 
+.shortcuts dt,
 .shortcuts dd {
   margin: 0;
 }
 
-kbd {
-  display: inline-block;
-  padding: 3px 6px;
-  border-radius: 3px;
-  background: var(--kbd-bg);
-  border: 1px solid var(--kbd-border);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-  font-family: var(--system-ui);
-  font-size: 13px;
-  min-width: 40px;
+/* Keycaps share one width and use the UI font, like shortcuts in native menus. */
+.shortcuts kbd {
+  display: block;
+  font-family: inherit;
   text-align: center;
-  line-height: 1;
-}
-
-kbd.spacebar {
-  font-size: 11px;
-}
-
-footer {
-  font-size: 8px;
-  color: var(--footer-text-color);
-  text-align: center;
-  margin-top: 0;
-  padding-top: 10px;
-  border-top: 1px solid var(--footer-border);
-}
-
-.settings-slider span {
-  flex: 0 0 36px;
-  display: inline-block;
-  margin-left: auto;
-  text-align: right;
-}
-
-.settings-help {
-  border: 1px solid var(--text-color);
-  border-radius: 100%;
-  padding: 0 4px;
-  font-size: 10px;
-  font-family: monospace;
-}
-
-.settings-help:hover {
-  background: var(--settings-help-bg-hover);
 }
