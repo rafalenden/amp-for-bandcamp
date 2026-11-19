@@ -5,6 +5,7 @@ import { AlbumPage } from '../content-pages/AlbumPage';
 import { CollectionPage } from '../content-pages/CollectionPage';
 import { FeedPage } from '../content-pages/FeedPage';
 import { DiscoverPage } from '../content-pages/DiscoverPage';
+import { HomePage } from '../content-pages/HomePage';
 import { LivePage } from '../content-pages/LivePage';
 import '../content/content.css';
 
@@ -22,6 +23,7 @@ export default defineContentScript({
         CollectionPage,
         FeedPage,
         DiscoverPage,
+        HomePage,
       ].find((page) => page.isMatch());
       if (Page) new Page(settings).init();
     } catch (error) {

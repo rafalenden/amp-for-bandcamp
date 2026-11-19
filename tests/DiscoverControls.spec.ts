@@ -21,14 +21,16 @@ const DISCOVER = `
   <div id="DiscoverApp">
     <div class="results-grid">${[1, 2, 3].map(result).join('')}</div>
     <div class="floating-player">
-      <button class="play-pause-button" aria-label="Play" data-id="player-toggle"></button>
-      <button class="prev-track" data-id="player-prev"></button>
-      <button class="next-track" data-id="player-next"></button>
-      <div class="track-meta"><a href="${FIXTURE_ORIGIN}/album/result-2">Result 2</a></div>
-      <div class="track-progress">
-        <input type="range" min="0" max="200" value="50" style="width: 400px">
+      <div class="player-bar">
+        <button class="play-pause-button" aria-label="Play" data-id="player-toggle"></button>
+        <button class="prev-track" data-id="player-prev"></button>
+        <button class="next-track" data-id="player-next"></button>
+        <div class="track-meta"><a href="${FIXTURE_ORIGIN}/album/result-2">Result 2</a></div>
+        <div class="track-progress">
+          <input type="range" min="0" max="200" value="50" style="width: 400px">
+        </div>
+        <button class="wishlist-button" data-id="wishlist"></button>
       </div>
-      <button class="wishlist-button" data-id="wishlist"></button>
     </div>
   </div>
   ${RECORD_CLICKS}

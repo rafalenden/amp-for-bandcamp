@@ -53,6 +53,7 @@ export class BasePage {
     document.addEventListener('keydown', (e) => {
       if (
         !this.settings.enableKeyboardShortcuts ||
+        !this.hasPlayer() ||
         (e.target as HTMLElement | null)?.tagName === 'INPUT' ||
         (e.target as HTMLElement | null)?.tagName === 'TEXTAREA' ||
         (e.target as HTMLElement | null)?.tagName === 'MENU-BAR'
@@ -95,6 +96,14 @@ export class BasePage {
           break;
       }
     });
+  }
+
+  /**
+   * Whether there is anything for the shortcuts to control. While there is
+   * not, keys keep their normal behaviour (e.g. scrolling the page).
+   */
+  hasPlayer() {
+    return true;
   }
 
   fastForward() {
