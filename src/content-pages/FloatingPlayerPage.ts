@@ -85,7 +85,7 @@ export class FloatingPlayerPage extends BasePage {
   /** The hook reads the volume from `<html>` whenever the page plays audio. */
   override applyVolumeOverride() {
     document.documentElement.dataset[AUDIO_HOOK.volumeAttr] = String(
-      this.settings.volume,
+      this.getEffectiveVolume(),
     );
   }
 

@@ -11,7 +11,7 @@ A multi-browser extension (Chrome, Firefox, Safari) that amplifies Bandcamp func
 
 ## Features
 
-- Volume control slider
+- Volume control slider with a mute toggle (the toolbar icon shows when sound is off)
 - Configurable seek duration
 - Auto-play the next track when the current one ends
 - Sticky mini-player that remains visible while scrolling on album pages
