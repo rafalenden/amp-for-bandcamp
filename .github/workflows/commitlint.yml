@@ -1,0 +1,37 @@
+name: Commit messages
+
+# The Release workflow derives the version number from commit messages, so a
+# commit that does not follow Conventional Commits would silently be left out.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  commitlint:
+    name: Check commit messages
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci
+    - name: Check the commits of this pull request
+      if: github.event_name == 'pull_request'
+      run: npx commitlint --from "$BASE" --to "$HEAD" --verbose
+      env:
+        BASE: ${{ github.event.pull_request.base.sha }}
+        HEAD: ${{ github.event.pull_request.head.sha }}
+    - name: Check the pushed commits
+      if: github.event_name == 'push'
+      run: npx commitlint --from "$BEFORE" --to "$AFTER" --verbose
+      env:
+        BEFORE: ${{ github.event.before }}
+        AFTER: ${{ github.sha }}

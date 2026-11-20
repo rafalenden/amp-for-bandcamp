@@ -1,0 +1,31 @@
+Transform your Bandcamp listening experience with Amp for Bandcamp, a Safari extension that adds powerful playback controls and
+practical UI improvements to make discovery and listening smoother.
+
+KEY FEATURES
+
+Auto-Play Next Track
+– Automatically moves to the next track when playback ends, so listening continues without interruption.
+
+ Keyboard Shortcuts
+– Space: Play/pause
+– Arrow Up: Previous track
+– Arrow Down: Next track
+– Arrow Right: Seek forward
+– Arrow Left: Seek backward
+– W: Add track to wishlist
+– Enter: Open track in new tab
+
+BPM Detection
+– Display the BPM of a track on album pages
+
+Sticky Album Player
+– Keeps the player pinned at the top of album pages while you 
+
+Playback Progress Indicators
+– Shows visual playback progress on supported Bandcamp views (including feed and album contexts).
+
+Volume Control
+– Set your preferred playback volume from the extension popup.
+
+Leave-Page Playback Warning
+– Optional warning helps prevent accidentally leaving Bandcamp while music is still playing.

@@ -35,3 +35,13 @@ yarn-error.log
 # WXT
 .output/
 .wxt/
+
+# fastlane
+fastlane/report.xml
+fastlane/README.md
+vendor/bundle/
+.bundle/
+# Written from each release's notes, not kept in the repository
+fastlane/metadata/*/release_notes.txt
+# Contact details for Apple's reviewers: kept on App Store Connect only
+fastlane/metadata/review_information/

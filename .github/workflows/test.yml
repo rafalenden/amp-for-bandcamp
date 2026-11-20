@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+  # The Release workflow runs these tests before it publishes anything.
+  workflow_call:
 
 jobs:
   test:
