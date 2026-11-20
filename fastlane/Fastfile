@@ -1,0 +1,110 @@
+# The Apple side of a release. The Release workflow runs `fastlane mac release`
+# after semantic-release has tagged the new version.
+#
+# Xcode Cloud builds, signs and uploads the app (see "Safari releases with
+# Xcode Cloud" in the README). This lane waits for that build to arrive on App
+# Store Connect, uploads the listing kept in this folder, and submits the
+# version for review.
+
+require "spaceship"
+
+ROOT = File.expand_path("..", __dir__)
+APP_IDENTIFIER = "com.enden.amp-for-bandcamp"
+SCREENSHOTS = File.join(ROOT, "fastlane", "screenshots")
+
+def marketing_version
+  File.read(File.join(ROOT, "safari", "xcconfig", "Base.xcconfig"))[/^MARKETING_VERSION = (.+)$/, 1].strip
+end
+
+# "What's New in This Version". App Store Connect requires it for an update.
+def release_notes
+  path = ENV["RELEASE_NOTES_PATH"]
+  notes = path && File.exist?(path) ? File.read(path).strip : ""
+  notes.empty? ? "Bug fixes and improvements." : notes
+end
+
+# The same notes for every language of the listing. Each language is named,
+# because a language taken from the metadata folder would win over "default".
+def localized_release_notes
+  languages = Dir.glob(File.join(ROOT, "fastlane", "metadata", "*-*")).select { |path| File.directory?(path) }
+  (["default"] + languages.map { |path| File.basename(path) }).to_h { |language| [language, release_notes] }
+end
+
+def has_screenshots?
+  !Dir.glob(File.join(SCREENSHOTS, "*", "*.{png,jpg,jpeg}")).empty?
+end
+
+# Returns the build number of the newest macOS build of `version` once Apple
+# has finished processing it, checking once a minute until `timeout` runs out.
+def wait_for_build(version, timeout)
+  app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+  UI.user_error!("No app with the identifier #{APP_IDENTIFIER} on App Store Connect") unless app
+
+  deadline = Time.now + timeout
+  loop do
+    build = Spaceship::ConnectAPI::Build.all(
+      app_id: app.id,
+      version: version,
+      platform: Spaceship::ConnectAPI::Platform::MAC_OS,
+      limit: 5
+    ).first
+
+    state = build ? build.processing_state : "not uploaded yet"
+    case state
+    when "VALID"
+      UI.success("Build #{build.version} of version #{version} is ready")
+      return build.version
+    when "FAILED", "INVALID"
+      UI.user_error!("Apple rejected build #{build.version} of version #{version} while processing it (#{state})")
+    end
+
+    if Time.now > deadline
+      UI.user_error!(
+        "No processed macOS build of version #{version} after #{timeout / 60} minutes (#{state}). " \
+        "Check that the Xcode Cloud workflow ran for this release and uploaded to App Store Connect, then re-run this job"
+      )
+    end
+    UI.message("Waiting for Xcode Cloud's build of version #{version}: #{state}")
+    sleep(60)
+  end
+end
+
+platform :mac do
+  desc "Submit the build Xcode Cloud made of this version, with the listing, for review. " \
+       "With submit:false, upload the listing and attach the build without submitting"
+  lane :release do |options|
+    submit = options.fetch(:submit, true).to_s != "false"
+    timeout = Integer(ENV.fetch("APPLE_BUILD_TIMEOUT_MINUTES", "90")) * 60
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_KEY")
+    )
+
+    version = marketing_version
+    build_number = wait_for_build(version, timeout)
+
+    upload_to_app_store(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      platform: "osx",
+      skip_binary_upload: true,
+      app_version: version,
+      build_number: build_number,
+      # Listing files that are missing from the repository are left as they
+      # are on App Store Connect.
+      metadata_path: "./fastlane/metadata",
+      screenshots_path: "./fastlane/screenshots",
+      skip_screenshots: !has_screenshots?,
+      overwrite_screenshots: true,
+      release_notes: localized_release_notes,
+      submit_for_review: submit,
+      automatic_release: true,
+      submission_information: { add_id_info_uses_idfa: false },
+      # The API key cannot read in-app purchases, which this check wants.
+      precheck_include_in_app_purchases: false,
+      force: true
+    )
+  end
+end

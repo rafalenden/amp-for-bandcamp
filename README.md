@@ -180,13 +180,82 @@ The test loads a copy of the build with a few lines added to the background scri
 
 The popup as a real toolbar popup is therefore not tested, and a release still needs a look at that in Safari. When the test fails on GitHub Actions, the job keeps a screenshot and `safaridriver`'s log as the `safari-failure` artifact.
 
+## Releasing
+
+Releases are made by the [Release workflow](.github/workflows/release.yml). Start it by hand from the repository's Actions tab ("Run workflow"). It then:
+
+1. runs the whole test suite, and stops if anything fails;
+2. lets [semantic-release](https://semantic-release.gitbook.io/) read the commits since the last `v*` tag and pick the next version;
+3. writes that version into `package.json` and the Xcode project, builds the store zips, commits the version bump, tags it and publishes a GitHub release with the zips attached;
+4. submits that version to the Chrome Web Store, Firefox Add-ons and the Mac App Store, each in its own job. For the Mac App Store, Xcode Cloud builds and uploads the app; the job waits for that build, uploads the listing and submits it.
+
+Tick "Only show which version would be released" to see what a run would do without releasing anything. If one store fails, use "Re-run failed jobs" on the run: the version is not released a second time. A store whose secrets are not set is skipped with a warning. Each store still reviews the submission on its own schedule.
+
+### Commit messages
+
+The version number comes from the commit messages, which follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+| Commit | Release |
+| --- | --- |
+| `fix: ...`, `perf: ...` | patch (2.0.1 → 2.0.2) |
+| `feat: ...` | minor (2.0.1 → 2.1.0) |
+| a `BREAKING CHANGE:` footer, or `feat!: ...` | major (2.0.1 → 3.0.0) |
+| `chore:`, `docs:`, `test:`, `ci:`, `refactor:`, `style:`, `build:` | none |
+
+A commit that does not follow the format is ignored by the release, so a `commit-msg` hook (installed by `npm install`) rejects it, and the "Commit messages" workflow checks pushes and pull requests. The `feat` and `fix` subjects become the release notes, and the "What's New" text on the App Store, so write them for users.
+
+### One-time setup
+
+semantic-release counts from the last tag, so tag the commit of the last published version, 2.0.0, once:
+
+```bash
+git tag v2.0.0 <commit that was published as 2.0.0>
+git push origin v2.0.0
+```
+
+Commits before that tag are never looked at. Commits made after it without the format are ignored too, so changes that were made that way and are not released yet need one empty commit each to announce them, for example:
+
+```bash
+git commit --allow-empty -m "feat: add a mute button"
+```
+
+In Xcode Cloud, set the workflow's start condition to tag changes matching `v*` (instead of branch changes), with an Archive action for the macOS scheme and App Store Connect distribution. Pushing the release tag then starts the build of exactly that version.
+
+Then add the secrets of each store under Settings → Secrets and variables → Actions:
+
+| Store | Secrets | Where they come from |
+| --- | --- | --- |
+| Chrome Web Store | `CHROME_PUBLISHER_ID`, `CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL`, `CHROME_SERVICE_ACCOUNT_PRIVATE_KEY` | Enable the Chrome Web Store API in a Google Cloud project, create a service account with a JSON key there, and add the service account's email under Account in the Chrome Web Store developer dashboard. The publisher ID is on the same page; the email and private key are the `client_email` and `private_key` values of the JSON key. |
+| Firefox Add-ons | `FIREFOX_JWT_ISSUER`, `FIREFOX_JWT_SECRET` | [addons.mozilla.org → Tools → Manage API Keys](https://addons.mozilla.org/developers/addon/api/key/). The add-on must already be listed. |
+| Mac App Store | `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_KEY` | App Store Connect → Users and Access → Integrations → App Store Connect API. Create a team key with the App Manager role. The key is the whole content of the downloaded `.p8` file. |
+
+Running `npx wxt submit init` walks through the Chrome and Firefox values.
+
+### Changing the App Store listing
+
+The App Store listing is kept in the repository and uploaded with every release by [fastlane](https://fastlane.tools) ([`fastlane/Fastfile`](fastlane/Fastfile)). Download the current listing once, signing in with your Apple ID:
+
+```bash
+bundle install
+bundle exec fastlane deliver download_metadata --platform osx -u <your Apple ID>
+bundle exec fastlane deliver download_screenshots --platform osx -u <your Apple ID>
+```
+
+This fills `fastlane/metadata/<language>/` with one text file per field (`description.txt`, `keywords.txt`, `promotional_text.txt`...) and `fastlane/screenshots/<language>/` with the images. Commit them. To change the description or a screenshot, edit or replace the file and commit it; the next release uploads it. A field or screenshot folder that is not in the repository is left as it is on App Store Connect.
+
+Apple ties the listing to a version, so a change to the listing alone still needs a release. Commit it as a fix, for example `fix(store): update the screenshots`, and run the Release workflow.
+
+To check the listing in App Store Connect before it goes to review, set the repository variable `APPLE_SUBMIT_FOR_REVIEW` to `false`. The workflow then uploads the listing, attaches the build and leaves "Submit for Review" to you.
+
+The Chrome Web Store and Firefox Add-ons listings are not tied to a version: edit them in each store's developer dashboard at any time.
+
 ## Safari releases with Xcode Cloud
 
 The executable hook [`safari/ci_scripts/ci_post_clone.sh`](safari/ci_scripts/ci_post_clone.sh) lives alongside `safari/Amp for Bandcamp.xcodeproj`, where [Xcode Cloud discovers custom build scripts](https://developer.apple.com/documentation/xcode/writing-custom-build-scripts).
 
 After checkout, the hook ensures Node.js 22.12 or newer is available (installing Node 22 with Homebrew if needed), installs the locked npm dependencies with `npm ci`, checks TypeScript, and builds only the Safari web extension into `.output/safari-mv3`. Any failed step stops the build. The existing Xcode build phases then copy the generated manifest, JavaScript, CSS, and icons into the macOS or iOS Safari extension during the native build/archive.
 
-In Xcode Cloud, configure the Safari project's workflow with a branch-change start condition for your release branch and an Archive action for the appropriate app scheme. Configure signing and the desired App Store Connect/TestFlight distribution in that workflow. Commit and push the hook with the project changes; Xcode Cloud runs it automatically on subsequent builds. The hook prepares the web assets; Xcode Cloud handles the native archive and distribution.
+In Xcode Cloud, configure the Safari project's workflow with a tag-change start condition for `v*` tags, which the [Release workflow](#releasing) pushes, and an Archive action for the appropriate app scheme. Configure signing and the desired App Store Connect/TestFlight distribution in that workflow. Commit and push the hook with the project changes; Xcode Cloud runs it automatically on subsequent builds. The hook prepares the web assets; Xcode Cloud handles the native archive and distribution.
 
 ## GitHub Actions CI
 

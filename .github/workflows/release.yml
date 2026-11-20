@@ -1,0 +1,203 @@
+name: Release
+
+# Started by hand from the Actions tab. It runs the tests, lets semantic-release
+# pick the next version from the commit messages, tags it, publishes a GitHub
+# release, and then sends that version to each store in its own job, so that a
+# store that fails can be re-run without releasing again.
+#
+# A store whose secrets are not set is skipped with a warning.
+# See "Releasing" in the README for the secrets each store needs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only show which version would be released
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+
+  release:
+    name: Version and GitHub release
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.semantic.outputs.version }}
+      tag: ${{ steps.semantic.outputs.tag }}
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci
+    # Sets the `version` and `tag` outputs only when a release was made.
+    - name: Release
+      id: semantic
+      run: npx semantic-release $DRY_RUN
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        # The commit-msg hook is for people; the release commit is generated.
+        HUSKY: 0
+
+  chrome:
+    name: Chrome Web Store
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.release.outputs.tag }}
+      CHROME_API_VERSION: v2
+      CHROME_EXTENSION_ID: gjmlgkbcolbleloakpcfhfaodldlheld
+      CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+      CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+      CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+
+    steps:
+    - name: Check that the store is set up
+      id: store
+      run: |
+        if [ -n "$CHROME_PUBLISHER_ID" ] && [ -n "$CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL" ] && [ -n "$CHROME_SERVICE_ACCOUNT_PRIVATE_KEY" ]; then
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "::warning::Chrome Web Store secrets are not set, so $TAG was not submitted there."
+        fi
+    - uses: actions/checkout@v7
+      if: steps.store.outputs.ready
+      with:
+        ref: ${{ needs.release.outputs.tag }}
+    - name: Use Node.js 22.x
+      if: steps.store.outputs.ready
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci
+      if: steps.store.outputs.ready
+    # Submit the very zip that is attached to the GitHub release.
+    - name: Download the released zip
+      if: steps.store.outputs.ready
+      run: gh release download "$TAG" --pattern '*-chrome.zip' --dir .output
+      env:
+        GH_TOKEN: ${{ github.token }}
+    - name: Submit for review
+      if: steps.store.outputs.ready
+      run: |
+        # The key may have been pasted from the JSON file with literal "\n".
+        export CHROME_SERVICE_ACCOUNT_PRIVATE_KEY="${CHROME_SERVICE_ACCOUNT_PRIVATE_KEY//\\n/$'\n'}"
+        npx wxt submit --chrome-zip .output/*-chrome.zip
+
+  firefox:
+    name: Firefox Add-ons
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.release.outputs.tag }}
+      FIREFOX_EXTENSION_ID: amp-for-bandcamp@enden.com
+      FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+      FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+
+    steps:
+    - name: Check that the store is set up
+      id: store
+      run: |
+        if [ -n "$FIREFOX_JWT_ISSUER" ] && [ -n "$FIREFOX_JWT_SECRET" ]; then
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "::warning::Firefox Add-ons secrets are not set, so $TAG was not submitted there."
+        fi
+    - uses: actions/checkout@v7
+      if: steps.store.outputs.ready
+      with:
+        ref: ${{ needs.release.outputs.tag }}
+    - name: Use Node.js 22.x
+      if: steps.store.outputs.ready
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci
+      if: steps.store.outputs.ready
+    # Mozilla reviews bundled code against its sources, hence the second zip.
+    - name: Download the released zips
+      if: steps.store.outputs.ready
+      run: gh release download "$TAG" --pattern '*-firefox.zip' --pattern '*-sources.zip' --dir .output
+      env:
+        GH_TOKEN: ${{ github.token }}
+    - name: Submit for review
+      if: steps.store.outputs.ready
+      run: npx wxt submit --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
+
+  apple:
+    name: Mac App Store
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-latest
+    # Xcode Cloud needs time to build the app, and Apple to process it.
+    timeout-minutes: 120
+    env:
+      TAG: ${{ needs.release.outputs.tag }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+      # Set the repository variable to `false` to upload the listing and
+      # attach the build, but press "Submit for Review" yourself.
+      SUBMIT: ${{ vars.APPLE_SUBMIT_FOR_REVIEW != 'false' }}
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      FASTLANE_SKIP_UPDATE_CHECK: 1
+
+    steps:
+    - name: Check that the store is set up
+      id: store
+      run: |
+        if [ -n "$APP_STORE_CONNECT_KEY_ID" ] && [ -n "$APP_STORE_CONNECT_ISSUER_ID" ] && [ -n "$APP_STORE_CONNECT_KEY" ]; then
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "::warning::App Store Connect secrets are not set, so $TAG was not submitted there."
+        fi
+    - uses: actions/checkout@v7
+      if: steps.store.outputs.ready
+      with:
+        ref: ${{ needs.release.outputs.tag }}
+    - name: Use Node.js 22.x
+      if: steps.store.outputs.ready
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22.x
+    - uses: ruby/setup-ruby@v1
+      if: steps.store.outputs.ready
+      with:
+        ruby-version: '3.3'
+        bundler-cache: true
+    - name: Turn the release notes into "What's New" text
+      if: steps.store.outputs.ready
+      run: |
+        gh release view "$TAG" --json body --jq .body | node scripts/store-release-notes.mjs > "$RUNNER_TEMP/release-notes.txt"
+        echo "RELEASE_NOTES_PATH=$RUNNER_TEMP/release-notes.txt" >> "$GITHUB_ENV"
+        cat "$RUNNER_TEMP/release-notes.txt"
+      env:
+        GH_TOKEN: ${{ github.token }}
+    # Xcode Cloud builds and uploads the app when the release tag is pushed.
+    - name: Wait for Xcode Cloud's build, then upload the listing and submit
+      if: steps.store.outputs.ready
+      run: bundle exec fastlane mac release "submit:$SUBMIT"
