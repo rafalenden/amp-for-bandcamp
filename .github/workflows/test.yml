@@ -34,6 +34,12 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: npx playwright install --with-deps ${{ matrix.browser }}
+    # macOS WebKit only lets Tab reach buttons and sliders when keyboard
+    # navigation is on, which it is not on a fresh runner. Turn it on for
+    # Playwright's WebKit, as on a Mac where the popup's focus tests pass.
+    - name: Let Tab reach every control in WebKit
+      if: matrix.browser == 'webkit'
+      run: defaults write org.webkit.Playwright AppleKeyboardUIMode -int 2
     - run: npm run ci
 
   # Known vulnerabilities in the packages that ship inside the extension.
