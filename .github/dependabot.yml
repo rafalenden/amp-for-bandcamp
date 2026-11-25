@@ -21,6 +21,9 @@ updates:
       # Matches the Node.js version the project runs on (22).
       - dependency-name: '@types/node'
         update-types: [version-update:semver-major]
+      # semantic-release 26 needs Node.js 26.
+      - dependency-name: semantic-release
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
