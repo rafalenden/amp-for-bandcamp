@@ -5,8 +5,8 @@ name: Release
 # release, and then sends that version to each store in its own job, so that a
 # store that fails can be re-run without releasing again.
 #
-# A store whose secrets are not set is skipped with a warning.
-# See "Releasing" in the README for the secrets each store needs.
+# Nothing is tagged or published until the tests pass and all three stores
+# accept their secrets. See "Releasing" in the README for the secrets.
 
 on:
   workflow_dispatch:
@@ -28,9 +28,11 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
 
-  # Signs in to each store without uploading anything, so that a wrong or
-  # expired secret stops the run before a version is tagged. In a dry run this
-  # is the way to check the secrets.
+  # Signs in to each store without uploading anything. The release job waits
+  # for this one, so nothing is tagged or published unless every store
+  # accepted its secrets; a store without secrets counts as a failure. Each
+  # store is checked even after an earlier one failed, so one run shows every
+  # secret that needs fixing. In a dry run this is the way to check them.
   stores:
     name: Check store logins
     runs-on: ubuntu-latest
@@ -51,58 +53,45 @@ jobs:
       FASTLANE_SKIP_UPDATE_CHECK: 1
 
     steps:
-    - name: See which stores are set up
-      id: store
-      run: |
-        if [ -n "$CHROME_PUBLISHER_ID" ] && [ -n "$CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL" ] && [ -n "$CHROME_SERVICE_ACCOUNT_PRIVATE_KEY" ]; then
-          echo "chrome=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "::warning::Chrome Web Store secrets are not set, so a release will skip it."
-        fi
-        if [ -n "$FIREFOX_JWT_ISSUER" ] && [ -n "$FIREFOX_JWT_SECRET" ]; then
-          echo "firefox=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "::warning::Firefox Add-ons secrets are not set, so a release will skip it."
-        fi
-        if [ -n "$APP_STORE_CONNECT_KEY_ID" ] && [ -n "$APP_STORE_CONNECT_ISSUER_ID" ] && [ -n "$APP_STORE_CONNECT_KEY" ]; then
-          echo "apple=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "::warning::App Store Connect secrets are not set, so a release will skip it."
-        fi
     - uses: actions/checkout@v7
     - name: Use Node.js 22.x
-      if: steps.store.outputs.chrome || steps.store.outputs.firefox
       uses: actions/setup-node@v7
       with:
         node-version: 22.x
         cache: 'npm'
     - run: npm ci
-      if: steps.store.outputs.chrome || steps.store.outputs.firefox
     # The store tool wants the zips to exist even when it uploads nothing.
     - run: npm run build:zip
-      if: steps.store.outputs.chrome || steps.store.outputs.firefox
-    # Each store is checked even when an earlier one failed, so one run shows
-    # every secret that needs fixing.
-    #
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+        bundler-cache: true
     # Reads the item's status, which needs the publisher ID, and the service
     # account to be added to the publisher in the developer dashboard.
     - name: Chrome Web Store
-      if: steps.store.outputs.chrome
+      if: ${{ !cancelled() }}
       run: |
+        for name in CHROME_PUBLISHER_ID CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL CHROME_SERVICE_ACCOUNT_PRIVATE_KEY; do
+          [ -n "${!name}" ] || { echo "::error::The $name secret is not set."; exit 1; }
+        done
+        # The key may have been pasted from the JSON file with literal "\n".
         export CHROME_SERVICE_ACCOUNT_PRIVATE_KEY="${CHROME_SERVICE_ACCOUNT_PRIVATE_KEY//\\n/$'\n'}"
         npx wxt submit --dry-run --chrome-zip .output/*-chrome.zip
     # Reads the add-on's details, which needs the add-on to be listed already.
     - name: Firefox Add-ons
-      if: ${{ !cancelled() && steps.store.outputs.firefox }}
-      run: npx wxt submit --dry-run --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
-    - uses: ruby/setup-ruby@v1
-      if: ${{ !cancelled() && steps.store.outputs.apple }}
-      with:
-        ruby-version: '3.3'
-        bundler-cache: true
+      if: ${{ !cancelled() }}
+      run: |
+        for name in FIREFOX_JWT_ISSUER FIREFOX_JWT_SECRET; do
+          [ -n "${!name}" ] || { echo "::error::The $name secret is not set."; exit 1; }
+        done
+        npx wxt submit --dry-run --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
     - name: Mac App Store
-      if: ${{ !cancelled() && steps.store.outputs.apple }}
-      run: bundle exec fastlane mac check
+      if: ${{ !cancelled() }}
+      run: |
+        for name in APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_KEY; do
+          [ -n "${!name}" ] || { echo "::error::The $name secret is not set."; exit 1; }
+        done
+        bundle exec fastlane mac check
 
   release:
     name: Version and GitHub release
@@ -148,34 +137,21 @@ jobs:
       CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
 
     steps:
-    - name: Check that the store is set up
-      id: store
-      run: |
-        if [ -n "$CHROME_PUBLISHER_ID" ] && [ -n "$CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL" ] && [ -n "$CHROME_SERVICE_ACCOUNT_PRIVATE_KEY" ]; then
-          echo "ready=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "::warning::Chrome Web Store secrets are not set, so $TAG was not submitted there."
-        fi
     - uses: actions/checkout@v7
-      if: steps.store.outputs.ready
       with:
         ref: ${{ needs.release.outputs.tag }}
     - name: Use Node.js 22.x
-      if: steps.store.outputs.ready
       uses: actions/setup-node@v7
       with:
         node-version: 22.x
         cache: 'npm'
     - run: npm ci
-      if: steps.store.outputs.ready
     # Submit the very zip that is attached to the GitHub release.
     - name: Download the released zip
-      if: steps.store.outputs.ready
       run: gh release download "$TAG" --pattern '*-chrome.zip' --dir .output
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Submit for review
-      if: steps.store.outputs.ready
       run: |
         # The key may have been pasted from the JSON file with literal "\n".
         export CHROME_SERVICE_ACCOUNT_PRIVATE_KEY="${CHROME_SERVICE_ACCOUNT_PRIVATE_KEY//\\n/$'\n'}"
@@ -193,34 +169,21 @@ jobs:
       FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
 
     steps:
-    - name: Check that the store is set up
-      id: store
-      run: |
-        if [ -n "$FIREFOX_JWT_ISSUER" ] && [ -n "$FIREFOX_JWT_SECRET" ]; then
-          echo "ready=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "::warning::Firefox Add-ons secrets are not set, so $TAG was not submitted there."
-        fi
     - uses: actions/checkout@v7
-      if: steps.store.outputs.ready
       with:
         ref: ${{ needs.release.outputs.tag }}
     - name: Use Node.js 22.x
-      if: steps.store.outputs.ready
       uses: actions/setup-node@v7
       with:
         node-version: 22.x
         cache: 'npm'
     - run: npm ci
-      if: steps.store.outputs.ready
     # Mozilla reviews bundled code against its sources, hence the second zip.
     - name: Download the released zips
-      if: steps.store.outputs.ready
       run: gh release download "$TAG" --pattern '*-firefox.zip' --pattern '*-sources.zip' --dir .output
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Submit for review
-      if: steps.store.outputs.ready
       run: npx wxt submit --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
 
   apple:
@@ -243,30 +206,18 @@ jobs:
       FASTLANE_SKIP_UPDATE_CHECK: 1
 
     steps:
-    - name: Check that the store is set up
-      id: store
-      run: |
-        if [ -n "$APP_STORE_CONNECT_KEY_ID" ] && [ -n "$APP_STORE_CONNECT_ISSUER_ID" ] && [ -n "$APP_STORE_CONNECT_KEY" ]; then
-          echo "ready=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "::warning::App Store Connect secrets are not set, so $TAG was not submitted there."
-        fi
     - uses: actions/checkout@v7
-      if: steps.store.outputs.ready
       with:
         ref: ${{ needs.release.outputs.tag }}
     - name: Use Node.js 22.x
-      if: steps.store.outputs.ready
       uses: actions/setup-node@v7
       with:
         node-version: 22.x
     - uses: ruby/setup-ruby@v1
-      if: steps.store.outputs.ready
       with:
         ruby-version: '3.3'
         bundler-cache: true
     - name: Turn the release notes into "What's New" text
-      if: steps.store.outputs.ready
       run: |
         gh release view "$TAG" --json body --jq .body | node scripts/store-release-notes.mjs > "$RUNNER_TEMP/release-notes.txt"
         echo "RELEASE_NOTES_PATH=$RUNNER_TEMP/release-notes.txt" >> "$GITHUB_ENV"
@@ -275,5 +226,4 @@ jobs:
         GH_TOKEN: ${{ github.token }}
     # Xcode Cloud builds and uploads the app when the release tag is pushed.
     - name: Wait for Xcode Cloud's build, then upload the listing and submit
-      if: steps.store.outputs.ready
       run: bundle exec fastlane mac release "submit:$SUBMIT"

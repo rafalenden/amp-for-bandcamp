@@ -184,12 +184,12 @@ The popup as a real toolbar popup is therefore not tested, and a release still n
 
 Releases are made by the [Release workflow](.github/workflows/release.yml). Start it by hand from the repository's Actions tab ("Run workflow"). It then:
 
-1. runs the whole test suite and signs in to each store without uploading anything, and stops if a test fails or a store rejects its secrets;
+1. runs the whole test suite and signs in to each store without uploading anything, and stops before anything is tagged or published if a test fails, or if any of the three stores rejects its secrets or has none set;
 2. lets [semantic-release](https://semantic-release.gitbook.io/) read the commits since the last `v*` tag and pick the next version;
 3. writes that version into `package.json` and the Xcode project, builds the store zips, commits the version bump, tags it and publishes a GitHub release with the zips attached;
 4. submits that version to the Chrome Web Store, Firefox Add-ons and the Mac App Store, each in its own job. For the Mac App Store, Xcode Cloud builds and uploads the app; the job waits for that build, uploads the listing and submits it.
 
-Tick "Only show which version would be released" to see what a run would do without releasing anything. A dry run still signs in to each store, so it is also the way to check the secrets after adding or changing them. If one store fails, use "Re-run failed jobs" on the run: the version is not released a second time. A store whose secrets are not set is skipped with a warning. Each store still reviews the submission on its own schedule.
+Tick "Only show which version would be released" to see what a run would do without releasing anything. A dry run still signs in to each store, so it is also the way to check the secrets after adding or changing them. If one store fails, use "Re-run failed jobs" on the run: the version is not released a second time. Each store still reviews the submission on its own schedule.
 
 ### Commit messages
 
