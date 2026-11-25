@@ -28,9 +28,82 @@ jobs:
     name: Test
     uses: ./.github/workflows/test.yml
 
+  # Signs in to each store without uploading anything, so that a wrong or
+  # expired secret stops the run before a version is tagged. In a dry run this
+  # is the way to check the secrets.
+  stores:
+    name: Check store logins
+    runs-on: ubuntu-latest
+    env:
+      CHROME_API_VERSION: v2
+      CHROME_EXTENSION_ID: gjmlgkbcolbleloakpcfhfaodldlheld
+      CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+      CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+      CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
+      FIREFOX_EXTENSION_ID: amp-for-bandcamp@enden.com
+      FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+      FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      FASTLANE_SKIP_UPDATE_CHECK: 1
+
+    steps:
+    - name: See which stores are set up
+      id: store
+      run: |
+        if [ -n "$CHROME_PUBLISHER_ID" ] && [ -n "$CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL" ] && [ -n "$CHROME_SERVICE_ACCOUNT_PRIVATE_KEY" ]; then
+          echo "chrome=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "::warning::Chrome Web Store secrets are not set, so a release will skip it."
+        fi
+        if [ -n "$FIREFOX_JWT_ISSUER" ] && [ -n "$FIREFOX_JWT_SECRET" ]; then
+          echo "firefox=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "::warning::Firefox Add-ons secrets are not set, so a release will skip it."
+        fi
+        if [ -n "$APP_STORE_CONNECT_KEY_ID" ] && [ -n "$APP_STORE_CONNECT_ISSUER_ID" ] && [ -n "$APP_STORE_CONNECT_KEY" ]; then
+          echo "apple=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "::warning::App Store Connect secrets are not set, so a release will skip it."
+        fi
+    - uses: actions/checkout@v7
+    - name: Use Node.js 22.x
+      if: steps.store.outputs.chrome || steps.store.outputs.firefox
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci
+      if: steps.store.outputs.chrome || steps.store.outputs.firefox
+    # The store tool wants the zips to exist even when it uploads nothing.
+    - run: npm run build:zip
+      if: steps.store.outputs.chrome || steps.store.outputs.firefox
+    # Reads the item's status, which needs the publisher ID, and the service
+    # account to be added to the publisher in the developer dashboard.
+    - name: Chrome Web Store
+      if: steps.store.outputs.chrome
+      run: |
+        export CHROME_SERVICE_ACCOUNT_PRIVATE_KEY="${CHROME_SERVICE_ACCOUNT_PRIVATE_KEY//\\n/$'\n'}"
+        npx wxt submit --dry-run --chrome-zip .output/*-chrome.zip
+    # Reads the add-on's details, which needs the add-on to be listed already.
+    - name: Firefox Add-ons
+      if: steps.store.outputs.firefox
+      run: npx wxt submit --dry-run --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
+    - uses: ruby/setup-ruby@v1
+      if: steps.store.outputs.apple
+      with:
+        ruby-version: '3.3'
+        bundler-cache: true
+    - name: Mac App Store
+      if: steps.store.outputs.apple
+      run: bundle exec fastlane mac check
+
   release:
     name: Version and GitHub release
-    needs: test
+    needs: [test, stores]
     runs-on: ubuntu-latest
     permissions:
       contents: write

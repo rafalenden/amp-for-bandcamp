@@ -107,4 +107,27 @@ platform :mac do
       force: true
     )
   end
+
+  desc "Check that the App Store Connect API key works and can see the app, without changing anything"
+  lane :check do
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_KEY")
+    )
+
+    # Unlike App.find, which returns nil for a rejected key, this raises.
+    begin
+      app = Spaceship::ConnectAPI::App.all(filter: { bundleId: APP_IDENTIFIER }).first
+    rescue Spaceship::UnauthorizedAccessError => e
+      UI.user_error!(
+        "App Store Connect rejected the API key. Check APP_STORE_CONNECT_KEY_ID, " \
+        "APP_STORE_CONNECT_ISSUER_ID and APP_STORE_CONNECT_KEY, and that the key is not revoked (#{e.message.lines.first.strip})"
+      )
+    end
+    UI.user_error!("The API key works, but it cannot see an app with the identifier #{APP_IDENTIFIER}") unless app
+
+    live = app.get_live_app_store_version(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
+    UI.success("Signed in to App Store Connect and found #{app.name}, live version #{live ? live.version_string : 'none'}")
+  end
 end
