@@ -97,7 +97,9 @@ jobs:
         bundle exec fastlane mac check
 
   release:
-    name: ${{ inputs.dry_run && 'Version (dry run)' || 'Version and GitHub release' }}
+    # A plain name: GitHub shows an expression here unevaluated when the job
+    # is skipped. The run's title says whether it is a dry run.
+    name: Version and GitHub release
     needs: [test, stores]
     runs-on: ubuntu-latest
     permissions:
