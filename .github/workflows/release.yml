@@ -81,6 +81,9 @@ jobs:
     # The store tool wants the zips to exist even when it uploads nothing.
     - run: npm run build:zip
       if: steps.store.outputs.chrome || steps.store.outputs.firefox
+    # Each store is checked even when an earlier one failed, so one run shows
+    # every secret that needs fixing.
+    #
     # Reads the item's status, which needs the publisher ID, and the service
     # account to be added to the publisher in the developer dashboard.
     - name: Chrome Web Store
@@ -90,15 +93,15 @@ jobs:
         npx wxt submit --dry-run --chrome-zip .output/*-chrome.zip
     # Reads the add-on's details, which needs the add-on to be listed already.
     - name: Firefox Add-ons
-      if: steps.store.outputs.firefox
+      if: ${{ !cancelled() && steps.store.outputs.firefox }}
       run: npx wxt submit --dry-run --firefox-zip .output/*-firefox.zip --firefox-sources-zip .output/*-sources.zip
     - uses: ruby/setup-ruby@v1
-      if: steps.store.outputs.apple
+      if: ${{ !cancelled() && steps.store.outputs.apple }}
       with:
         ruby-version: '3.3'
         bundler-cache: true
     - name: Mac App Store
-      if: steps.store.outputs.apple
+      if: ${{ !cancelled() && steps.store.outputs.apple }}
       run: bundle exec fastlane mac check
 
   release:
