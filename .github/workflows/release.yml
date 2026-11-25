@@ -113,10 +113,11 @@ jobs:
         node-version: 22.x
         cache: 'npm'
     - run: npm ci
-    # Sets the `version` and `tag` outputs only when a release was made.
+    # Shows the version and release notes on the run's summary page, and sets
+    # the `version` and `tag` outputs only when a release was made.
     - name: Release
       id: semantic
-      run: npx semantic-release $DRY_RUN
+      run: node scripts/release.mjs $DRY_RUN
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}

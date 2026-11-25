@@ -18,9 +18,6 @@ export default {
         // build the store zips so that they carry it.
         prepareCmd:
           'bash scripts/version ${nextRelease.version} && npm run build:zip',
-        // Tell the store jobs of the workflow what was released.
-        successCmd:
-          'echo "version=${nextRelease.version}" >> "$GITHUB_OUTPUT" && echo "tag=${nextRelease.gitTag}" >> "$GITHUB_OUTPUT"',
       },
     ],
     [

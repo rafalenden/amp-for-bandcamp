@@ -189,7 +189,7 @@ Releases are made by the [Release workflow](.github/workflows/release.yml). Star
 3. writes that version into `package.json` and the Xcode project, builds the store zips, commits the version bump, tags it and publishes a GitHub release with the zips attached;
 4. submits that version to the Chrome Web Store, Firefox Add-ons and the Mac App Store, each in its own job. For the Mac App Store, Xcode Cloud builds and uploads the app; the job waits for that build, uploads the listing and submits it.
 
-Tick "Only show which version would be released" to see what a run would do without releasing anything. A dry run still signs in to each store, so it is also the way to check the secrets after adding or changing them. If one store fails, use "Re-run failed jobs" on the run: the version is not released a second time. Each store still reviews the submission on its own schedule.
+The run's summary page (the run's "Summary" in the Actions tab) shows the version and its release notes, for a dry run as well. Tick "Only show which version would be released" to see what a run would do without releasing anything. A dry run still signs in to each store, so it is also the way to check the secrets after adding or changing them. If one store fails, use "Re-run failed jobs" on the run: the version is not released a second time. Each store still reviews the submission on its own schedule.
 
 ### Commit messages
 
