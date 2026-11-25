@@ -1,4 +1,7 @@
 name: Release
+# The title each run gets in the Actions tab, so a dry run is told apart from
+# a release at a glance.
+run-name: ${{ inputs.dry_run && 'Dry run (nothing is released)' || 'Release to the stores' }}
 
 # Started by hand from the Actions tab. It runs the tests, lets semantic-release
 # pick the next version from the commit messages, tags it, publishes a GitHub
@@ -94,7 +97,7 @@ jobs:
         bundle exec fastlane mac check
 
   release:
-    name: Version and GitHub release
+    name: ${{ inputs.dry_run && 'Version (dry run)' || 'Version and GitHub release' }}
     needs: [test, stores]
     runs-on: ubuntu-latest
     permissions:
