@@ -122,4 +122,7 @@ fieldset:not(:last-child) {
   display: block;
   font-family: inherit;
   text-align: center;
+  /* Keep keycaps about as tall as the description text beside them. */
+  padding-block: 2px;
+  line-height: 1.2;
 }
