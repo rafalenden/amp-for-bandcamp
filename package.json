@@ -53,7 +53,7 @@
     "@wxt-dev/module-react": "^1.2.2",
     "husky": "^9.1.7",
     "prettier": "^3.6.2",
-    "semantic-release": "^25.0.9",
+    "semantic-release": "^26.0.1",
     "typescript": "^7.0.2",
     "wxt": "^0.21.4"
   },
